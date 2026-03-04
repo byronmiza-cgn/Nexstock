@@ -1,25 +1,33 @@
 {% extends "base.html" %}
-{% block title %}Nuevo Lote{% endblock %}
+{% block title %}{% if editando %}Editar Lote{% else %}Nuevo Lote{% endif %}{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="bi bi-plus-circle"></i> Registrar Lote de Entrada</h2>
+<h2 class="mb-4"><i class="bi bi-{% if editando %}pencil{% else %}plus-circle{% endif %}"></i> {% if editando %}Editar Lote{% else %}Registrar Lote de Entrada{% endif %}</h2>
 <div class="card">
     <div class="card-body">
         {% if frecuentes or resto %}
-        <form method="POST">
+        <form method="POST" action="{% if editando %}{{ url_for('editar_lote', id=editando.id) }}{% endif %}">
+            {% if editando %}
+            <div class="mb-3">
+                <label class="form-label">Especie</label>
+                <input type="text" class="form-control" value="{{ editando.especie.nombre }}" disabled>
+                <input type="hidden" name="especie_id" value="{{ editando.especie_id }}">
+            </div>
+            {% else %}
             {% include '_especies_dropdown.html' %}
+            {% endif %}
             <div class="mb-3">
                 <label for="cantidad" class="form-label">Cantidad ingresada</label>
-                <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required>
+                <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required value="{{ editando.cantidad if editando else '' }}">
             </div>
             <div class="mb-3">
                 <label for="costo_total" class="form-label">Costo total del lote ($)</label>
-                <input type="number" class="form-control" id="costo_total" name="costo_total" step="0.01" min="0" required>
+                <input type="number" class="form-control" id="costo_total" name="costo_total" step="0.01" min="0" required value="{{ '%.2f'|format(editando.costo_total) if editando else '' }}">
             </div>
             <div class="mb-3">
                 <label for="fecha" class="form-label">Fecha de ingreso</label>
-                <input type="date" class="form-control" id="fecha" name="fecha" value="{{ hoy }}" required>
+                <input type="date" class="form-control" id="fecha" name="fecha" value="{{ editando.fecha.isoformat() if editando else hoy }}" required>
             </div>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Registrar Lote</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> {% if editando %}Guardar Cambios{% else %}Registrar Lote{% endif %}</button>
             <a href="/lotes" class="btn btn-outline-secondary ms-2">Cancelar</a>
         </form>
         {% else %}

@@ -539,6 +539,166 @@ def nueva_muerte():
     return render_template('nueva_muerte.html', frecuentes=frecuentes, resto=resto, hoy=date.today().isoformat())
 
 
+@app.route('/especies/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_especie(id):
+    especie = Especie.query.filter_by(id=id, usuario_id=session['usuario_id']).first_or_404()
+    if request.method == 'POST':
+        nombre = request.form['nombre'].strip()
+        categoria = request.form['categoria']
+        descripcion = request.form.get('descripcion', '').strip()
+        if not nombre:
+            flash('El nombre es obligatorio.', 'danger')
+            return redirect(url_for('editar_especie', id=id))
+        existente = Especie.query.filter(
+            Especie.usuario_id == session['usuario_id'],
+            Especie.nombre == nombre,
+            Especie.id != id
+        ).first()
+        if existente:
+            flash('Ya existe otra especie con ese nombre.', 'danger')
+            return redirect(url_for('editar_especie', id=id))
+        especie.nombre = nombre
+        especie.categoria = categoria
+        especie.descripcion = descripcion
+        db.session.commit()
+        flash(f'Especie "{nombre}" actualizada.', 'success')
+        return redirect(url_for('lista_especies'))
+    return render_template('nueva_especie.html', editando=especie)
+
+
+@app.route('/especies/<int:id>/eliminar', methods=['POST'])
+@login_required
+def eliminar_especie(id):
+    especie = Especie.query.filter_by(id=id, usuario_id=session['usuario_id']).first_or_404()
+    if especie.lotes or especie.ventas or especie.muertes:
+        flash('No se puede eliminar una especie que tiene lotes, ventas o muertes asociadas.', 'danger')
+        return redirect(url_for('lista_especies'))
+    db.session.delete(especie)
+    db.session.commit()
+    flash(f'Especie "{especie.nombre}" eliminada.', 'success')
+    return redirect(url_for('lista_especies'))
+
+
+@app.route('/lotes/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_lote(id):
+    lote = Lote.query.get_or_404(id)
+    especie = Especie.query.filter_by(id=lote.especie_id, usuario_id=session['usuario_id']).first_or_404()
+    if request.method == 'POST':
+        nueva_cantidad = int(request.form['cantidad'])
+        nuevo_costo = float(request.form['costo_total'])
+        nueva_fecha = datetime.strptime(request.form['fecha'], '%Y-%m-%d').date()
+        if nueva_cantidad < 1 or nuevo_costo < 0:
+            flash('Cantidad debe ser al menos 1 y costo no puede ser negativo.', 'danger')
+            return redirect(url_for('editar_lote', id=id))
+        total_consumido = sum(v.cantidad for v in especie.ventas) + sum(m.cantidad for m in especie.muertes)
+        total_otros_lotes = sum(l.cantidad for l in especie.lotes if l.id != id)
+        if total_otros_lotes + nueva_cantidad < total_consumido:
+            flash(f'No puedes reducir la cantidad a {nueva_cantidad}. Ya se han consumido {total_consumido} unidades.', 'danger')
+            return redirect(url_for('editar_lote', id=id))
+        lote.cantidad = nueva_cantidad
+        lote.costo_total = nuevo_costo
+        lote.fecha = nueva_fecha
+        db.session.commit()
+        flash('Lote actualizado.', 'success')
+        return redirect(url_for('lista_lotes'))
+    frecuentes, resto = get_especies_usuario()
+    return render_template('nuevo_lote.html', editando=lote, frecuentes=frecuentes, resto=resto, hoy=date.today().isoformat())
+
+
+@app.route('/lotes/<int:id>/eliminar', methods=['POST'])
+@login_required
+def eliminar_lote(id):
+    lote = Lote.query.get_or_404(id)
+    especie = Especie.query.filter_by(id=lote.especie_id, usuario_id=session['usuario_id']).first_or_404()
+    total_otros_lotes = sum(l.cantidad for l in especie.lotes if l.id != id)
+    total_consumido = sum(v.cantidad for v in especie.ventas) + sum(m.cantidad for m in especie.muertes)
+    if total_otros_lotes < total_consumido:
+        flash(f'No se puede eliminar este lote. Se han vendido/muerto {total_consumido} unidades y solo quedarian {total_otros_lotes} en otros lotes.', 'danger')
+        return redirect(url_for('lista_lotes'))
+    db.session.delete(lote)
+    db.session.commit()
+    flash('Lote eliminado.', 'success')
+    return redirect(url_for('lista_lotes'))
+
+
+@app.route('/ventas/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_venta(id):
+    venta = Venta.query.get_or_404(id)
+    especie = Especie.query.filter_by(id=venta.especie_id, usuario_id=session['usuario_id']).first_or_404()
+    if request.method == 'POST':
+        nueva_cantidad = int(request.form['cantidad'])
+        nuevo_precio = float(request.form['precio_unidad'])
+        nueva_fecha = datetime.strptime(request.form['fecha'], '%Y-%m-%d').date()
+        if nueva_cantidad < 1 or nuevo_precio < 0:
+            flash('Cantidad debe ser al menos 1 y precio no puede ser negativo.', 'danger')
+            return redirect(url_for('editar_venta', id=id))
+        stats = calcular_estadisticas(especie)
+        stock_disponible = stats['stock'] + venta.cantidad
+        if nueva_cantidad > stock_disponible:
+            flash(f'Stock insuficiente. Disponible: {stock_disponible}', 'danger')
+            return redirect(url_for('editar_venta', id=id))
+        venta.cantidad = nueva_cantidad
+        venta.precio_unidad = nuevo_precio
+        venta.fecha = nueva_fecha
+        db.session.commit()
+        flash('Venta actualizada.', 'success')
+        return redirect(url_for('lista_ventas'))
+    frecuentes, resto = get_especies_usuario()
+    return render_template('nueva_venta.html', editando=venta, frecuentes=frecuentes, resto=resto, hoy=date.today().isoformat())
+
+
+@app.route('/ventas/<int:id>/eliminar', methods=['POST'])
+@login_required
+def eliminar_venta(id):
+    venta = Venta.query.get_or_404(id)
+    Especie.query.filter_by(id=venta.especie_id, usuario_id=session['usuario_id']).first_or_404()
+    db.session.delete(venta)
+    db.session.commit()
+    flash('Venta eliminada.', 'success')
+    return redirect(url_for('lista_ventas'))
+
+
+@app.route('/muertes/<int:id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_muerte(id):
+    muerte = Muerte.query.get_or_404(id)
+    especie = Especie.query.filter_by(id=muerte.especie_id, usuario_id=session['usuario_id']).first_or_404()
+    if request.method == 'POST':
+        nueva_cantidad = int(request.form['cantidad'])
+        nueva_fecha = datetime.strptime(request.form['fecha'], '%Y-%m-%d').date()
+        nota = request.form.get('nota', '').strip()
+        if nueva_cantidad < 1:
+            flash('Cantidad debe ser al menos 1.', 'danger')
+            return redirect(url_for('editar_muerte', id=id))
+        stats = calcular_estadisticas(especie)
+        stock_disponible = stats['stock'] + muerte.cantidad
+        if nueva_cantidad > stock_disponible:
+            flash(f'No puedes registrar mas muertes que el stock disponible ({stock_disponible}).', 'danger')
+            return redirect(url_for('editar_muerte', id=id))
+        muerte.cantidad = nueva_cantidad
+        muerte.fecha = nueva_fecha
+        muerte.nota = nota
+        db.session.commit()
+        flash('Muerte actualizada.', 'success')
+        return redirect(url_for('lista_muertes'))
+    frecuentes, resto = get_especies_usuario()
+    return render_template('nueva_muerte.html', editando=muerte, frecuentes=frecuentes, resto=resto, hoy=date.today().isoformat())
+
+
+@app.route('/muertes/<int:id>/eliminar', methods=['POST'])
+@login_required
+def eliminar_muerte(id):
+    muerte = Muerte.query.get_or_404(id)
+    Especie.query.filter_by(id=muerte.especie_id, usuario_id=session['usuario_id']).first_or_404()
+    db.session.delete(muerte)
+    db.session.commit()
+    flash('Muerte eliminada.', 'success')
+    return redirect(url_for('lista_muertes'))
+
+
 def migrate_add_costo_momento():
     from sqlalchemy import inspect, text
     inspector = inspect(db.engine)

@@ -63,6 +63,12 @@ static/
   - "Negocio saludable" message when no issues detected
   - Ganancia real (money) per species alongside margin %
   - Top 3 most profitable species
+- **Edit & Delete records:**
+  - All record types (especies, lotes, ventas, muertes) support editing and deleting
+  - Edit opens pre-filled form; species cannot be changed on existing records
+  - Delete requires confirmation modal
+  - Stock validation: cannot delete a lot if it would cause negative stock; cannot delete a species with associated records
+  - `costo_unitario_momento` is never modified on venta/muerte edits (immutable historical cost preserved)
 - Mobile-first design: card layout on mobile, table on desktop
 
 ## Key Business Logic

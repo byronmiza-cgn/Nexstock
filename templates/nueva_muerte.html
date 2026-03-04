@@ -1,25 +1,33 @@
 {% extends "base.html" %}
-{% block title %}Registrar Muerte{% endblock %}
+{% block title %}{% if editando %}Editar Muerte{% else %}Registrar Muerte{% endif %}{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="bi bi-plus-circle"></i> Registrar Muerte</h2>
+<h2 class="mb-4"><i class="bi bi-{% if editando %}pencil{% else %}plus-circle{% endif %}"></i> {% if editando %}Editar Muerte{% else %}Registrar Muerte{% endif %}</h2>
 <div class="card">
     <div class="card-body">
         {% if frecuentes or resto %}
-        <form method="POST">
+        <form method="POST" action="{% if editando %}{{ url_for('editar_muerte', id=editando.id) }}{% endif %}">
+            {% if editando %}
+            <div class="mb-3">
+                <label class="form-label">Especie</label>
+                <input type="text" class="form-control" value="{{ editando.especie.nombre }}" disabled>
+                <input type="hidden" name="especie_id" value="{{ editando.especie_id }}">
+            </div>
+            {% else %}
             {% include '_especies_dropdown.html' %}
+            {% endif %}
             <div class="mb-3">
                 <label for="cantidad" class="form-label">Cantidad</label>
-                <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required>
+                <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required value="{{ editando.cantidad if editando else '' }}">
             </div>
             <div class="mb-3">
                 <label for="fecha" class="form-label">Fecha</label>
-                <input type="date" class="form-control" id="fecha" name="fecha" value="{{ hoy }}" required>
+                <input type="date" class="form-control" id="fecha" name="fecha" value="{{ editando.fecha.isoformat() if editando else hoy }}" required>
             </div>
             <div class="mb-3">
                 <label for="nota" class="form-label">Nota (opcional)</label>
-                <textarea class="form-control" id="nota" name="nota" rows="2" placeholder="Ej: Problema con el pH del agua"></textarea>
+                <textarea class="form-control" id="nota" name="nota" rows="2" placeholder="Ej: Problema con el pH del agua">{{ editando.nota if editando and editando.nota else '' }}</textarea>
             </div>
-            <button type="submit" class="btn btn-danger"><i class="bi bi-check-lg"></i> Registrar Muerte</button>
+            <button type="submit" class="btn btn-danger"><i class="bi bi-check-lg"></i> {% if editando %}Guardar Cambios{% else %}Registrar Muerte{% endif %}</button>
             <a href="/muertes" class="btn btn-outline-secondary ms-2">Cancelar</a>
         </form>
         {% else %}

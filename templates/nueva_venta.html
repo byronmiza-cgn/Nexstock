@@ -1,14 +1,22 @@
 {% extends "base.html" %}
-{% block title %}Nueva Venta{% endblock %}
+{% block title %}{% if editando %}Editar Venta{% else %}Nueva Venta{% endif %}{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="bi bi-plus-circle"></i> Registrar Venta</h2>
+<h2 class="mb-4"><i class="bi bi-{% if editando %}pencil{% else %}plus-circle{% endif %}"></i> {% if editando %}Editar Venta{% else %}Registrar Venta{% endif %}</h2>
 <div class="card">
     <div class="card-body">
         {% if frecuentes or resto %}
-        <form method="POST">
+        <form method="POST" action="{% if editando %}{{ url_for('editar_venta', id=editando.id) }}{% endif %}">
+            {% if editando %}
+            <div class="mb-3">
+                <label class="form-label">Especie</label>
+                <input type="text" class="form-control" value="{{ editando.especie.nombre }}" disabled>
+                <input type="hidden" name="especie_id" value="{{ editando.especie_id }}">
+            </div>
+            {% else %}
             {% include '_especies_dropdown.html' %}
+            {% endif %}
 
-            <div id="sale-info" class="d-none mb-3">
+            <div id="sale-info" class="{% if editando %}{% else %}d-none{% endif %} mb-3">
                 <div class="card bg-light">
                     <div class="card-body py-2">
                         <div class="row text-center">
@@ -31,11 +39,11 @@
 
             <div class="mb-3">
                 <label for="cantidad" class="form-label">Cantidad vendida</label>
-                <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required>
+                <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required value="{{ editando.cantidad if editando else '' }}">
             </div>
             <div class="mb-3">
                 <label for="precio_unidad" class="form-label">Precio por unidad ($)</label>
-                <input type="number" class="form-control" id="precio_unidad" name="precio_unidad" step="0.01" min="0" required>
+                <input type="number" class="form-control" id="precio_unidad" name="precio_unidad" step="0.01" min="0" required value="{{ '%.2f'|format(editando.precio_unidad) if editando else '' }}">
                 <div id="precio-sugerido" class="form-text d-none"></div>
             </div>
 
@@ -65,9 +73,9 @@
 
             <div class="mb-3">
                 <label for="fecha" class="form-label">Fecha de venta</label>
-                <input type="date" class="form-control" id="fecha" name="fecha" value="{{ hoy }}" required>
+                <input type="date" class="form-control" id="fecha" name="fecha" value="{{ editando.fecha.isoformat() if editando else hoy }}" required>
             </div>
-            <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> Registrar Venta</button>
+            <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> {% if editando %}Guardar Cambios{% else %}Registrar Venta{% endif %}</button>
             <a href="/ventas" class="btn btn-outline-secondary ms-2">Cancelar</a>
         </form>
         {% else %}
@@ -81,37 +89,56 @@ var costoActual = 0;
 var precioMin = 0;
 var stockDisponible = 0;
 
-document.getElementById('especie_id').addEventListener('change', function() {
-    var id = this.value;
-    var infoPanel = document.getElementById('sale-info');
-    if (!id) {
-        infoPanel.classList.add('d-none');
-        costoActual = 0;
-        precioMin = 0;
-        actualizarPreview();
-        return;
-    }
-    fetch('/api/especie/' + id + '/stats')
+{% if editando %}
+(function() {
+    fetch('/api/especie/{{ editando.especie_id }}/stats')
         .then(function(r) { return r.json(); })
         .then(function(data) {
             costoActual = data.costo_unitario_ajustado;
             precioMin = data.precio_minimo_recomendado;
-            stockDisponible = data.stock;
+            stockDisponible = data.stock + {{ editando.cantidad }};
             document.getElementById('info-costo').textContent = '$' + costoActual.toFixed(2);
             document.getElementById('info-stock').textContent = stockDisponible;
             document.getElementById('info-precio-min').textContent = '$' + precioMin.toFixed(2);
-            infoPanel.classList.remove('d-none');
-
-            var sugerido = document.getElementById('precio-sugerido');
-            if (costoActual > 0) {
-                sugerido.textContent = 'Precio minimo recomendado (20% margen): $' + precioMin.toFixed(2);
-                sugerido.classList.remove('d-none');
-            } else {
-                sugerido.classList.add('d-none');
-            }
             actualizarPreview();
         });
-});
+})();
+{% endif %}
+
+var especieSelect = document.getElementById('especie_id');
+if (especieSelect) {
+    especieSelect.addEventListener('change', function() {
+        var id = this.value;
+        var infoPanel = document.getElementById('sale-info');
+        if (!id) {
+            infoPanel.classList.add('d-none');
+            costoActual = 0;
+            precioMin = 0;
+            actualizarPreview();
+            return;
+        }
+        fetch('/api/especie/' + id + '/stats')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                costoActual = data.costo_unitario_ajustado;
+                precioMin = data.precio_minimo_recomendado;
+                stockDisponible = data.stock;
+                document.getElementById('info-costo').textContent = '$' + costoActual.toFixed(2);
+                document.getElementById('info-stock').textContent = stockDisponible;
+                document.getElementById('info-precio-min').textContent = '$' + precioMin.toFixed(2);
+                infoPanel.classList.remove('d-none');
+
+                var sugerido = document.getElementById('precio-sugerido');
+                if (costoActual > 0) {
+                    sugerido.textContent = 'Precio minimo recomendado (20% margen): $' + precioMin.toFixed(2);
+                    sugerido.classList.remove('d-none');
+                } else {
+                    sugerido.classList.add('d-none');
+                }
+                actualizarPreview();
+            });
+    });
+}
 
 document.getElementById('cantidad').addEventListener('input', actualizarPreview);
 document.getElementById('precio_unidad').addEventListener('input', actualizarPreview);
