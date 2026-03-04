@@ -250,6 +250,73 @@ a:hover {
     box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
 }
 
+.onboarding-card {
+    border: 2px solid #E5E7EB;
+    background: #fff;
+}
+
+.onboarding-steps {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.onboarding-step {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.8rem 0;
+    gap: 0.8rem;
+}
+
+.onboarding-step + .onboarding-step {
+    border-top: 1px solid #F3F4F6;
+}
+
+.step-icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.step-number {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.step-active .step-number {
+    background: var(--nex-primary);
+    color: #fff;
+}
+
+.step-pending .step-number {
+    background: #E5E7EB;
+    color: var(--nex-text-muted);
+}
+
+.step-done .step-title {
+    color: var(--nex-text-muted);
+    text-decoration: line-through;
+}
+
+.step-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--nex-text);
+}
+
+.step-pending .step-title {
+    color: #9CA3AF;
+}
+
 @media (max-width: 576px) {
     .stat-card .stat-value {
         font-size: 1.3rem;

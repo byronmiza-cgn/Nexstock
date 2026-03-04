@@ -283,12 +283,64 @@
     {% endfor %}
 </div>
 
-{% else %}
-<div class="text-center mt-5">
-    <i class="bi bi-bar-chart-line" style="font-size: 4rem; color: #1E3A8A;"></i>
-    <h4 class="mt-3">Bienvenido a NexStock</h4>
-    <p class="text-muted">Comienza registrando tus especies para llevar el control de tu inventario.</p>
-    <a href="/especies/nueva" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Registrar Primera Especie</a>
+{% endif %}
+
+{% if onboarding %}
+<div class="card mb-4 onboarding-card">
+    <div class="card-body p-4">
+        <div class="text-center mb-3">
+            <i class="bi bi-bar-chart-line" style="font-size: 2.5rem; color: #1E3A8A;"></i>
+            <h4 class="mt-2 fw-bold">Bienvenido a NexStock</h4>
+            <p class="text-muted mb-0">Completa estos pasos para ver tu primera Ganancia Neta</p>
+        </div>
+        <div class="onboarding-steps">
+            <div class="onboarding-step {% if tiene_especies %}step-done{% else %}step-active{% endif %}">
+                <div class="step-icon">
+                    {% if tiene_especies %}
+                        <i class="bi bi-check-circle-fill text-nex-success"></i>
+                    {% else %}
+                        <span class="step-number">1</span>
+                    {% endif %}
+                </div>
+                <div class="step-content">
+                    <div class="step-title">Agrega tu primer producto</div>
+                    {% if not tiene_especies %}
+                        <a href="/especies/nueva" class="btn btn-primary btn-sm mt-1">Agregar producto</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="onboarding-step {% if tiene_lotes %}step-done{% elif tiene_especies %}step-active{% else %}step-pending{% endif %}">
+                <div class="step-icon">
+                    {% if tiene_lotes %}
+                        <i class="bi bi-check-circle-fill text-nex-success"></i>
+                    {% else %}
+                        <span class="step-number">2</span>
+                    {% endif %}
+                </div>
+                <div class="step-content">
+                    <div class="step-title">Registra tu primer lote</div>
+                    {% if tiene_especies and not tiene_lotes %}
+                        <a href="/lotes/nuevo" class="btn btn-primary btn-sm mt-1">Registrar lote</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="onboarding-step {% if tiene_ventas %}step-done{% elif tiene_lotes %}step-active{% else %}step-pending{% endif %}">
+                <div class="step-icon">
+                    {% if tiene_ventas %}
+                        <i class="bi bi-check-circle-fill text-nex-success"></i>
+                    {% else %}
+                        <span class="step-number">3</span>
+                    {% endif %}
+                </div>
+                <div class="step-content">
+                    <div class="step-title">Registra tu primera venta</div>
+                    {% if tiene_lotes and not tiene_ventas %}
+                        <a href="/ventas/nueva" class="btn btn-primary btn-sm mt-1">Registrar venta</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endif %}
 

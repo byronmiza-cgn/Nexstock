@@ -334,7 +334,14 @@ def dashboard():
         fecha_inicio = hoy.replace(day=1)
         fecha_fin = hoy
 
-    especies = Especie.query.filter_by(usuario_id=session['usuario_id']).order_by(Especie.nombre).all()
+    uid = session['usuario_id']
+    especies = Especie.query.filter_by(usuario_id=uid).order_by(Especie.nombre).all()
+
+    tiene_especies = len(especies) > 0
+    tiene_lotes = Lote.query.join(Especie).filter(Especie.usuario_id == uid).first() is not None if tiene_especies else False
+    tiene_ventas = Venta.query.join(Especie).filter(Especie.usuario_id == uid).first() is not None if tiene_lotes else False
+    onboarding = not (tiene_especies and tiene_lotes and tiene_ventas)
+
     datos = []
     valor_inventario_total = 0
     for esp in especies:
@@ -342,7 +349,7 @@ def dashboard():
         datos.append({'especie': esp, **stats})
         valor_inventario_total += stats['valor_inventario']
 
-    balance = calcular_balance_periodo(session['usuario_id'], fecha_inicio, fecha_fin)
+    balance = calcular_balance_periodo(uid, fecha_inicio, fecha_fin)
 
     sugerencias = generar_sugerencias(datos, balance)
 
@@ -364,6 +371,10 @@ def dashboard():
         fecha_inicio=fecha_inicio.isoformat(),
         fecha_fin=fecha_fin.isoformat(),
         hoy=date.today().isoformat(),
+        onboarding=onboarding,
+        tiene_especies=tiene_especies,
+        tiene_lotes=tiene_lotes,
+        tiene_ventas=tiene_ventas,
     )
 
 
@@ -398,6 +409,10 @@ def nueva_especie():
         )
         db.session.add(especie)
         db.session.commit()
+        tiene_lotes = Lote.query.join(Especie).filter(Especie.usuario_id == session['usuario_id']).first()
+        if not tiene_lotes:
+            flash(f'Especie "{nombre}" registrada. Ahora registra tu primer lote.', 'success')
+            return redirect(url_for('nuevo_lote'))
         flash(f'Especie "{nombre}" registrada.', 'success')
         return redirect(url_for('lista_especies'))
     return render_template('nueva_especie.html')
@@ -430,6 +445,10 @@ def nuevo_lote():
         incrementar_uso(especie)
         db.session.add(lote)
         db.session.commit()
+        tiene_ventas = Venta.query.join(Especie).filter(Especie.usuario_id == session['usuario_id']).first()
+        if not tiene_ventas:
+            flash('Lote registrado. Ahora registra tu primera venta.', 'success')
+            return redirect(url_for('nueva_venta'))
         flash('Lote registrado.', 'success')
         return redirect(url_for('lista_lotes'))
     frecuentes, resto = get_especies_usuario()
@@ -463,6 +482,7 @@ def nueva_venta():
         if cantidad > stats['stock']:
             flash(f'Stock insuficiente. Disponible: {stats["stock"]}', 'danger')
             return redirect(url_for('nueva_venta'))
+        es_primera_venta = not Venta.query.join(Especie).filter(Especie.usuario_id == session['usuario_id']).first()
         venta = Venta(
             especie_id=especie.id, cantidad=cantidad, precio_unidad=precio_unidad,
             costo_unitario_momento=stats['costo_unitario_ajustado'], fecha=fecha
@@ -470,6 +490,9 @@ def nueva_venta():
         incrementar_uso(especie)
         db.session.add(venta)
         db.session.commit()
+        if es_primera_venta:
+            flash('Ya estas viendo tus numeros reales. NexStock ahora esta trabajando para ti.', 'success')
+            return redirect(url_for('dashboard'))
         flash('Venta registrada.', 'success')
         return redirect(url_for('lista_ventas'))
     frecuentes, resto = get_especies_usuario()
