@@ -1,0 +1,96 @@
+Quiero hacer un rebranding completo de la aplicación a NexStock con identidad financiera profesional.
+
+Objetivo:
+Que la app se sienta como herramienta de control financiero moderna, minimalista y confiable. No quiero estética acuática ni informal. Debe verse como SaaS serio.
+
+⸻
+
+1️⃣ Cambio de Marca
+	•	Reemplazar completamente cualquier referencia a AquaControl por NexStock.
+	•	Actualizar:
+	•	Navbar
+	•	Title del navegador
+	•	Login
+	•	Footer
+	•	Dashboard
+	•	Documentación
+	•	Usar el nombre como:
+NexStock (sin espacio interno)
+
+⸻
+
+2️⃣ Identidad Visual Financiera
+
+Aplicar la siguiente paleta:
+
+Primary: #1E3A8A
+Secondary: #3B82F6
+Success (ganancia): #16A34A
+Warning (alerta): #F59E0B
+Danger (pérdida): #DC2626
+Background: #F3F4F6
+Texto principal: #111827
+Texto secundario: #6B7280
+
+⸻
+
+3️⃣ Lineamientos UX/UI
+
+Estilo general:
+	•	Minimalista
+	•	Mucho espacio en blanco
+	•	Mobile-first
+	•	Números grandes y protagonistas
+	•	Diseño limpio tipo SaaS financiero
+
+Aplicar:
+	•	Dashboard con tarjetas claras y sombras suaves
+	•	Bordes ligeramente redondeados (no exagerados)
+	•	Botones principales en Primary
+	•	Ganancias en verde
+	•	Pérdidas en rojo
+	•	Alertas en naranja
+	•	Evitar colores saturados o estilo infantil
+	•	Evitar iconos de peces o elementos acuáticos
+
+⸻
+
+4️⃣ Navbar
+	•	Fondo Primary (#1E3A8A)
+	•	Texto blanco
+	•	Nombre NexStock alineado a la izquierda
+	•	Estilo limpio, profesional
+
+⸻
+
+5️⃣ Dashboard
+	•	Sección superior “Resumen Financiero” con tarjetas más grandes
+	•	Ganancia Neta debe destacar visualmente
+	•	Si es negativa, usar rojo suave con fondo ligero
+	•	Si es positiva, verde profesional
+
+El objetivo es que en 5 segundos el usuario entienda:
+	•	Si está ganando o perdiendo
+	•	Cuánto tiene invertido
+	•	Cuánto ha recuperado
+	•	Cuánto vale su inventario
+
+⸻
+
+6️⃣ Tipografía
+
+Mantener tipografía limpia tipo system-ui o similar.
+No agregar fuentes decorativas.
+
+⸻
+
+7️⃣ Sensación general
+
+Debe sentirse como:
+	•	Herramienta financiera moderna
+	•	Sistema confiable
+	•	Producto listo para cobrar
+	•	Plataforma escalable
+
+No quiero rediseño complejo.
+Solo coherencia visual y profesionalismo.
