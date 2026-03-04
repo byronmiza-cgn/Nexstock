@@ -17,7 +17,7 @@ templates/
   base.html                     - Base template with navbar and auth-aware layout
   login.html                    - Login form
   registro.html                 - Registration form
-  dashboard.html                - Dashboard with alerts, top 3, stats (mobile-first)
+  dashboard.html                - Financial dashboard with period filter, balance, suggestions
   especies.html                 - Species list
   nueva_especie.html            - New species form
   _especies_dropdown.html       - Shared species dropdown with search and smart ordering
@@ -40,9 +40,12 @@ static/
   - Shows cost per unit, stock, and min recommended price (20% margin)
   - Live margin/unit, margin %, and total profit calculation
   - Red alert when selling below cost
-- **Dashboard alerts:**
-  - High mortality warning (>25%)
-  - Negative margin warning
+- **Financial Dashboard:**
+  - Period filter: Hoy / Semana / Mes / Personalizado (custom date range)
+  - Resumen Financiero: Invertido, Recuperado, Ganancia Neta, Valor Inventario
+  - Smart suggestions (max 2): high mortality, below-cost sales, low margin
+  - "Negocio saludable" message when no issues detected
+  - Ganancia real (money) per species alongside margin %
   - Top 3 most profitable species
 - Mobile-first design: card layout on mobile, table on desktop
 
@@ -52,6 +55,15 @@ static/
 - Adjusted cost/unit = total cost / (total entered - total dead)
 - Min recommended price = adjusted cost * 1.20
 - Adjusted margin = (sales revenue - (adjusted cost * sold)) / (adjusted cost * sold) * 100
+- **Ganancia real per species** = ingreso_ventas - (costo_unitario_ajustado * total_vendido) - (costo_unitario_ajustado * total_muerto)
+- **Balance periodo:**
+  - Total Invertido = sum of lote.costo_total in date range
+  - Total Recuperado = sum of venta revenue in date range
+  - Costo Vendido = sum of (costo_unitario_ajustado * cantidad vendida) per species in range
+  - Costo Muertes = sum of (costo_unitario_ajustado * cantidad muerta) per species in range
+  - Ganancia Neta = Recuperado - Costo Vendido - Costo Muertes
+- **Valor Inventario** = sum of (stock * costo_unitario_ajustado) per species (always calculated, no period filter)
+- **Smart alerts (max 2):** mortality >25%, negative margin sales, average margin <10%
 
 ## API Endpoints
 - GET /api/especie/<id>/stats - Returns species financial stats (JSON)

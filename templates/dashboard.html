@@ -1,30 +1,92 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="bi bi-speedometer2"></i> Dashboard de Inventario</h2>
 
 {% if datos %}
 
-{% if alertas %}
-<div class="mb-4">
-    {% for a in alertas %}
-        {% if a.tipo == 'mortalidad' %}
-        <div class="alert alert-danger d-flex align-items-center" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
-            <div>
-                <strong>Alta mortalidad:</strong> {{ a.especie }} tiene {{ a.valor }}% de mortalidad. Revisa las condiciones del acuario.
-            </div>
-        </div>
-        {% elif a.tipo == 'margen_negativo' %}
-        <div class="alert alert-warning d-flex align-items-center" role="alert">
-            <i class="bi bi-graph-down-arrow me-2 fs-5"></i>
-            <div>
-                <strong>Margen negativo:</strong> {{ a.especie }} tiene un margen de {{ a.valor }}%. Estas perdiendo dinero con esta especie.
-            </div>
-        </div>
-        {% endif %}
-    {% endfor %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0"><i class="bi bi-speedometer2"></i> Dashboard</h2>
 </div>
+
+<div class="card mb-4">
+    <div class="card-body py-2">
+        <form method="GET" action="/" class="period-filter">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <input type="radio" class="btn-check" name="periodo" id="p-hoy" value="hoy" autocomplete="off" {% if periodo == 'hoy' %}checked{% endif %} onchange="this.form.submit()">
+                <label class="btn btn-outline-primary btn-sm" for="p-hoy">Hoy</label>
+
+                <input type="radio" class="btn-check" name="periodo" id="p-semana" value="semana" autocomplete="off" {% if periodo == 'semana' %}checked{% endif %} onchange="this.form.submit()">
+                <label class="btn btn-outline-primary btn-sm" for="p-semana">Semana</label>
+
+                <input type="radio" class="btn-check" name="periodo" id="p-mes" value="mes" autocomplete="off" {% if periodo == 'mes' %}checked{% endif %} onchange="this.form.submit()">
+                <label class="btn btn-outline-primary btn-sm" for="p-mes">Mes</label>
+
+                <input type="radio" class="btn-check" name="periodo" id="p-custom" value="custom" autocomplete="off" {% if periodo == 'custom' %}checked{% endif %}>
+                <label class="btn btn-outline-primary btn-sm" for="p-custom">Personalizado</label>
+
+                <div id="custom-dates" class="d-flex gap-2 align-items-center {% if periodo != 'custom' %}d-none{% endif %}">
+                    <input type="date" class="form-control form-control-sm" name="desde" value="{{ fecha_inicio }}" style="max-width: 140px;">
+                    <span class="text-muted">-</span>
+                    <input type="date" class="form-control form-control-sm" name="hasta" value="{{ fecha_fin }}" style="max-width: 140px;">
+                    <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-dark text-white">
+        <i class="bi bi-cash-stack"></i> Resumen Financiero
+    </div>
+    <div class="card-body p-0">
+        <div class="row g-0">
+            <div class="col-6 col-md-3 border-end border-bottom">
+                <div class="finance-card">
+                    <div class="finance-value text-primary">${{ "%.2f"|format(balance.total_invertido) }}</div>
+                    <div class="finance-label">Invertido</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 border-bottom">
+                <div class="finance-card">
+                    <div class="finance-value text-info">${{ "%.2f"|format(balance.total_recuperado) }}</div>
+                    <div class="finance-label">Recuperado</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3 border-end">
+                <div class="finance-card">
+                    <div class="finance-value {% if balance.ganancia_neta >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        ${{ "%.2f"|format(balance.ganancia_neta) }}
+                    </div>
+                    <div class="finance-label">Ganancia Neta</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="finance-card">
+                    <div class="finance-value text-dark">${{ "%.2f"|format(valor_inventario_total) }}</div>
+                    <div class="finance-label">Valor Inventario</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if sugerencias %}
+    {% for s in sugerencias %}
+    <div class="card suggestion-card suggestion-{{ s.tipo }} mb-3">
+        <div class="card-body py-2 d-flex align-items-center">
+            <i class="bi {{ s.icono }} me-2 fs-5"></i>
+            <div>{{ s.texto }}</div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="card suggestion-card suggestion-success mb-3">
+        <div class="card-body py-2 d-flex align-items-center">
+            <i class="bi bi-check-circle-fill me-2 fs-5 text-success"></i>
+            <div>Negocio saludable en este periodo.</div>
+        </div>
+    </div>
 {% endif %}
 
 <div class="row mb-4">
@@ -57,7 +119,7 @@
 {% if top_rentables %}
 <div class="card mb-4">
     <div class="card-header bg-success text-white">
-        <i class="bi bi-trophy"></i> Top 3 Especies Mas Rentables
+        <i class="bi bi-trophy"></i> Top 3 Mas Rentables
     </div>
     <div class="card-body p-0">
         <div class="row g-0">
@@ -69,9 +131,7 @@
                     <div class="text-success fs-4 fw-bold">{{ d.margen }}%</div>
                     <div class="text-muted small">margen</div>
                     <div class="mt-1 small">
-                        Costo: ${{ "%.2f"|format(d.costo_unitario_ajustado) }}/u
-                        &middot;
-                        Vendidos: {{ d.total_vendido }}
+                        Ganancia: <strong class="text-success">${{ "%.2f"|format(d.ganancia_real) }}</strong>
                     </div>
                 </div>
             </div>
@@ -81,9 +141,9 @@
 </div>
 {% endif %}
 
-<div class="card d-none d-lg-block">
+<div class="card d-none d-lg-block mb-4">
     <div class="card-header bg-primary text-white">
-        <i class="bi bi-table"></i> Resumen por Especie
+        <i class="bi bi-table"></i> Detalle por Especie
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -95,6 +155,7 @@
                         <th class="text-center">Mortalidad</th>
                         <th class="text-end">Costo/U</th>
                         <th class="text-end">Ingresos</th>
+                        <th class="text-end">Ganancia</th>
                         <th class="text-center">Margen</th>
                     </tr>
                 </thead>
@@ -125,6 +186,15 @@
                         </td>
                         <td class="text-end">${{ "%.2f"|format(d.costo_unitario_ajustado) }}</td>
                         <td class="text-end">${{ "%.2f"|format(d.ingreso_ventas) }}</td>
+                        <td class="text-end">
+                            {% if d.ganancia_real > 0 %}
+                                <span class="text-success fw-bold">${{ "%.2f"|format(d.ganancia_real) }}</span>
+                            {% elif d.ganancia_real < 0 %}
+                                <span class="text-danger fw-bold">${{ "%.2f"|format(d.ganancia_real) }}</span>
+                            {% else %}
+                                <span class="text-muted">$0.00</span>
+                            {% endif %}
+                        </td>
                         <td class="text-center">
                             {% if d.margen > 0 %}
                                 <span class="text-success fw-bold">{{ d.margen }}%</span>
@@ -164,14 +234,6 @@
             </div>
             <div class="row text-center g-2">
                 <div class="col-3">
-                    <div class="small text-muted">Ingreso</div>
-                    <div class="fw-bold">{{ d.total_ingresado }}</div>
-                </div>
-                <div class="col-3">
-                    <div class="small text-muted">Vendido</div>
-                    <div class="fw-bold">{{ d.total_vendido }}</div>
-                </div>
-                <div class="col-3">
                     <div class="small text-muted">Mortalidad</div>
                     <div>
                         {% if d.mortalidad < 5 %}
@@ -195,9 +257,22 @@
                         {% endif %}
                     </div>
                 </div>
-            </div>
-            <div class="mt-2 small text-muted">
-                Costo/U: ${{ "%.2f"|format(d.costo_unitario_ajustado) }} &middot; Ingresos: ${{ "%.2f"|format(d.ingreso_ventas) }}
+                <div class="col-3">
+                    <div class="small text-muted">Costo/U</div>
+                    <div class="fw-bold small">${{ "%.2f"|format(d.costo_unitario_ajustado) }}</div>
+                </div>
+                <div class="col-3">
+                    <div class="small text-muted">Ganancia</div>
+                    <div>
+                        {% if d.ganancia_real > 0 %}
+                            <span class="text-success fw-bold small">${{ "%.2f"|format(d.ganancia_real) }}</span>
+                        {% elif d.ganancia_real < 0 %}
+                            <span class="text-danger fw-bold small">${{ "%.2f"|format(d.ganancia_real) }}</span>
+                        {% else %}
+                            <span class="text-muted small">$0.00</span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -212,4 +287,20 @@
     <a href="/especies/nueva" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Registrar Primera Especie</a>
 </div>
 {% endif %}
+
+<script>
+(function() {
+    var customBtn = document.getElementById('p-custom');
+    if (!customBtn) return;
+    customBtn.addEventListener('change', function() {
+        document.getElementById('custom-dates').classList.remove('d-none');
+    });
+    ['p-hoy', 'p-semana', 'p-mes'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('change', function() {
+            document.getElementById('custom-dates').classList.add('d-none');
+        });
+    });
+})();
+</script>
 {% endblock %}

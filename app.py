@@ -3,7 +3,7 @@ from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SESSION_SECRET', 'dev-secret-key')
@@ -103,17 +103,30 @@ def calcular_estadisticas(especie):
     mortalidad = (total_muerto / total_ingresado * 100) if total_ingresado > 0 else 0
 
     unidades_vendibles = total_ingresado - total_muerto
-    costo_unitario_ajustado = (costo_total / unidades_vendibles) if unidades_vendibles > 0 else 0
+    if unidades_vendibles > 0:
+        costo_unitario_ajustado = costo_total / unidades_vendibles
+    elif total_ingresado > 0:
+        costo_unitario_ajustado = costo_total / total_ingresado
+    else:
+        costo_unitario_ajustado = 0
 
     precio_minimo_recomendado = round(costo_unitario_ajustado * 1.20, 2)
 
+    costo_de_vendidos = costo_unitario_ajustado * total_vendido
+    if unidades_vendibles <= 0 and total_muerto > 0:
+        costo_de_muertos = costo_total - costo_de_vendidos
+    else:
+        costo_de_muertos = costo_unitario_ajustado * total_muerto
+    ganancia_real = ingreso_ventas - costo_de_vendidos - costo_de_muertos
+
     if total_vendido > 0 and costo_unitario_ajustado > 0:
-        costo_de_vendidos = costo_unitario_ajustado * total_vendido
         margen = ((ingreso_ventas - costo_de_vendidos) / costo_de_vendidos) * 100
     elif costo_total > 0 and unidades_vendibles <= 0:
         margen = -100.0
     else:
         margen = 0
+
+    valor_inventario = max(stock, 0) * costo_unitario_ajustado
 
     return {
         'total_ingresado': total_ingresado,
@@ -123,10 +136,104 @@ def calcular_estadisticas(especie):
         'costo_total': costo_total,
         'costo_unitario_ajustado': round(costo_unitario_ajustado, 2),
         'precio_minimo_recomendado': precio_minimo_recomendado,
-        'ingreso_ventas': ingreso_ventas,
+        'ingreso_ventas': round(ingreso_ventas, 2),
+        'costo_de_vendidos': round(costo_de_vendidos, 2),
+        'costo_de_muertos': round(costo_de_muertos, 2),
+        'ganancia_real': round(ganancia_real, 2),
+        'valor_inventario': round(valor_inventario, 2),
         'mortalidad': round(mortalidad, 1),
         'margen': round(margen, 1),
     }
+
+
+def obtener_rango_fechas(periodo, desde_str, hasta_str):
+    hoy = date.today()
+    if periodo == 'hoy':
+        return hoy, hoy
+    elif periodo == 'semana':
+        inicio = hoy - timedelta(days=hoy.weekday())
+        return inicio, hoy
+    elif periodo == 'mes':
+        return hoy.replace(day=1), hoy
+    elif periodo == 'custom' and desde_str and hasta_str:
+        try:
+            desde = datetime.strptime(desde_str, '%Y-%m-%d').date()
+            hasta = datetime.strptime(hasta_str, '%Y-%m-%d').date()
+            return desde, hasta
+        except ValueError:
+            return None, None
+    return None, None
+
+
+def calcular_balance_periodo(usuario_id, fecha_inicio, fecha_fin):
+    especies = Especie.query.filter_by(usuario_id=usuario_id).all()
+
+    total_invertido = 0
+    total_recuperado = 0
+    total_costo_vendido = 0
+    total_costo_muertes = 0
+
+    for esp in especies:
+        stats = calcular_estadisticas(esp)
+        costo_u = stats['costo_unitario_ajustado']
+
+        lotes_periodo = [l for l in esp.lotes if fecha_inicio <= l.fecha <= fecha_fin]
+        total_invertido += sum(l.costo_total for l in lotes_periodo)
+
+        ventas_periodo = [v for v in esp.ventas if fecha_inicio <= v.fecha <= fecha_fin]
+        vendido_periodo = sum(v.cantidad for v in ventas_periodo)
+        ingreso_periodo = sum(v.cantidad * v.precio_unidad for v in ventas_periodo)
+        total_recuperado += ingreso_periodo
+        total_costo_vendido += costo_u * vendido_periodo
+
+        muertes_periodo = [m for m in esp.muertes if fecha_inicio <= m.fecha <= fecha_fin]
+        muerto_periodo = sum(m.cantidad for m in muertes_periodo)
+        total_costo_muertes += costo_u * muerto_periodo
+
+    ganancia_neta = total_recuperado - total_costo_vendido - total_costo_muertes
+
+    return {
+        'total_invertido': round(total_invertido, 2),
+        'total_recuperado': round(total_recuperado, 2),
+        'costo_vendido': round(total_costo_vendido, 2),
+        'costo_muertes': round(total_costo_muertes, 2),
+        'ganancia_neta': round(ganancia_neta, 2),
+    }
+
+
+def generar_sugerencias(datos, balance):
+    sugerencias = []
+
+    especies_alta_mortalidad = [d for d in datos if d['mortalidad'] > 25 and d['total_ingresado'] > 0]
+    if especies_alta_mortalidad:
+        nombres = ', '.join(d['especie'].nombre for d in especies_alta_mortalidad[:2])
+        sugerencias.append({
+            'tipo': 'danger',
+            'icono': 'bi-heartbreak',
+            'texto': f'Alta mortalidad en {nombres}. Revisa las condiciones del acuario.',
+        })
+
+    especies_bajo_costo = [d for d in datos if d['margen'] < 0 and d['total_vendido'] > 0]
+    if especies_bajo_costo:
+        nombres = ', '.join(d['especie'].nombre for d in especies_bajo_costo[:2])
+        sugerencias.append({
+            'tipo': 'warning',
+            'icono': 'bi-graph-down-arrow',
+            'texto': f'Ventas por debajo del costo en {nombres}. Ajusta los precios.',
+        })
+
+    if len(sugerencias) < 2:
+        especies_con_ventas = [d for d in datos if d['total_vendido'] > 0 and d['margen'] > 0]
+        if especies_con_ventas:
+            margen_promedio = sum(d['margen'] for d in especies_con_ventas) / len(especies_con_ventas)
+            if margen_promedio < 10:
+                sugerencias.append({
+                    'tipo': 'warning',
+                    'icono': 'bi-exclamation-circle',
+                    'texto': f'Margen promedio bajo ({margen_promedio:.1f}%). Considera aumentar precios.',
+                })
+
+    return sugerencias[:2]
 
 
 @app.route('/api/especie/<int:especie_id>/stats')
@@ -205,24 +312,28 @@ def logout():
 @app.route('/')
 @login_required
 def dashboard():
+    periodo = request.args.get('periodo', 'mes')
+    desde_str = request.args.get('desde', '')
+    hasta_str = request.args.get('hasta', '')
+
+    fecha_inicio, fecha_fin = obtener_rango_fechas(periodo, desde_str, hasta_str)
+    if fecha_inicio is None:
+        periodo = 'mes'
+        hoy = date.today()
+        fecha_inicio = hoy.replace(day=1)
+        fecha_fin = hoy
+
     especies = Especie.query.filter_by(usuario_id=session['usuario_id']).order_by(Especie.nombre).all()
     datos = []
-    alertas = []
+    valor_inventario_total = 0
     for esp in especies:
         stats = calcular_estadisticas(esp)
         datos.append({'especie': esp, **stats})
-        if stats['mortalidad'] > 25 and stats['total_ingresado'] > 0:
-            alertas.append({
-                'tipo': 'mortalidad',
-                'especie': esp.nombre,
-                'valor': stats['mortalidad'],
-            })
-        if stats['margen'] < 0 and stats['total_vendido'] > 0:
-            alertas.append({
-                'tipo': 'margen_negativo',
-                'especie': esp.nombre,
-                'valor': stats['margen'],
-            })
+        valor_inventario_total += stats['valor_inventario']
+
+    balance = calcular_balance_periodo(session['usuario_id'], fecha_inicio, fecha_fin)
+
+    sugerencias = generar_sugerencias(datos, balance)
 
     top_rentables = sorted(
         [d for d in datos if d['margen'] > 0 and d['total_vendido'] > 0],
@@ -233,9 +344,15 @@ def dashboard():
     return render_template(
         'dashboard.html',
         datos=datos,
-        alertas=alertas,
+        balance=balance,
+        valor_inventario_total=round(valor_inventario_total, 2),
+        sugerencias=sugerencias,
         top_rentables=top_rentables,
         usuario=usuario,
+        periodo=periodo,
+        fecha_inicio=fecha_inicio.isoformat(),
+        fecha_fin=fecha_fin.isoformat(),
+        hoy=date.today().isoformat(),
     )
 
 

@@ -34,6 +34,55 @@ body {
     letter-spacing: 0.5px;
 }
 
+.finance-card {
+    text-align: center;
+    padding: 1.2rem 0.8rem;
+}
+
+.finance-card .finance-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.finance-card .finance-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.2rem;
+}
+
+.period-filter .btn {
+    border-radius: 20px;
+    padding: 0.3rem 1rem;
+    font-size: 0.85rem;
+}
+
+.period-filter .btn-check:checked + .btn-outline-primary {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+.suggestion-card {
+    border-left: 4px solid;
+    border-radius: 8px;
+}
+
+.suggestion-card.suggestion-danger {
+    border-left-color: #dc3545;
+    background-color: #fff5f5;
+}
+
+.suggestion-card.suggestion-warning {
+    border-left-color: #ffc107;
+    background-color: #fffbeb;
+}
+
+.suggestion-card.suggestion-success {
+    border-left-color: #28a745;
+    background-color: #f0fff4;
+}
+
 .table th {
     font-weight: 600;
     font-size: 0.85rem;
@@ -84,7 +133,20 @@ body {
         font-size: 0.7rem;
     }
 
+    .finance-card .finance-value {
+        font-size: 1.1rem;
+    }
+
+    .finance-card .finance-label {
+        font-size: 0.65rem;
+    }
+
     h2 {
         font-size: 1.4rem;
+    }
+
+    .period-filter .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.7rem;
     }
 }
