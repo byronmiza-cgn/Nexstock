@@ -48,6 +48,7 @@
                         <th class="text-center">Stock</th>
                         <th class="text-center">Mortalidad</th>
                         <th class="text-end">Costo Total</th>
+                        <th class="text-end">Costo/U Ajustado</th>
                         <th class="text-end">Ingresos</th>
                         <th class="text-center">Margen</th>
                     </tr>
@@ -79,6 +80,7 @@
                             {% endif %}
                         </td>
                         <td class="text-end">${{ "%.2f"|format(d.costo_total) }}</td>
+                        <td class="text-end">${{ "%.2f"|format(d.costo_unitario_ajustado) }}</td>
                         <td class="text-end">${{ "%.2f"|format(d.ingreso_ventas) }}</td>
                         <td class="text-center">
                             {% if d.margen > 0 %}

@@ -1,0 +1,32 @@
+<div class="mb-3">
+    <label for="especie_search" class="form-label">Especie</label>
+    <input type="text" class="form-control mb-2" id="especie_search" placeholder="Buscar especie..." autocomplete="off">
+    <select class="form-select" id="especie_id" name="especie_id" required>
+        <option value="">Seleccionar especie...</option>
+        {% if frecuentes %}
+        <optgroup label="Mas usadas">
+            {% for e in frecuentes %}
+            <option value="{{ e.id }}" data-nombre="{{ e.nombre|lower }}">{{ e.nombre }} ({{ e.categoria }})</option>
+            {% endfor %}
+        </optgroup>
+        {% endif %}
+        {% if resto %}
+        <optgroup label="Todas">
+            {% for e in resto %}
+            <option value="{{ e.id }}" data-nombre="{{ e.nombre|lower }}">{{ e.nombre }} ({{ e.categoria }})</option>
+            {% endfor %}
+        </optgroup>
+        {% endif %}
+    </select>
+</div>
+<script>
+document.getElementById('especie_search').addEventListener('input', function() {
+    var filter = this.value.toLowerCase();
+    var select = document.getElementById('especie_id');
+    var options = select.querySelectorAll('option[data-nombre]');
+    options.forEach(function(opt) {
+        var nombre = opt.getAttribute('data-nombre');
+        opt.style.display = nombre.indexOf(filter) !== -1 ? '' : 'none';
+    });
+});
+</script>

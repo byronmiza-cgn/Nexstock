@@ -1,6 +1,6 @@
 import os
 from functools import wraps
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date
@@ -34,6 +34,7 @@ class Especie(db.Model):
     nombre = db.Column(db.String(100), nullable=False)
     categoria = db.Column(db.String(50), nullable=False, default='Pez')
     descripcion = db.Column(db.String(200))
+    usage_count = db.Column(db.Integer, nullable=False, default=0)
     lotes = db.relationship('Lote', backref='especie', lazy=True)
     ventas = db.relationship('Venta', backref='especie', lazy=True)
     muertes = db.relationship('Muerte', backref='especie', lazy=True)
@@ -79,7 +80,15 @@ def get_usuario():
 
 
 def get_especies_usuario():
-    return Especie.query.filter_by(usuario_id=session['usuario_id']).order_by(Especie.nombre).all()
+    todas = Especie.query.filter_by(usuario_id=session['usuario_id']).all()
+    frecuentes = sorted([e for e in todas if e.usage_count > 0], key=lambda e: -e.usage_count)[:10]
+    frecuentes_ids = {e.id for e in frecuentes}
+    resto = sorted([e for e in todas if e.id not in frecuentes_ids], key=lambda e: e.nombre.lower())
+    return frecuentes, resto
+
+
+def incrementar_uso(especie):
+    especie.usage_count += 1
 
 
 def calcular_estadisticas(especie):
@@ -93,13 +102,13 @@ def calcular_estadisticas(especie):
 
     mortalidad = (total_muerto / total_ingresado * 100) if total_ingresado > 0 else 0
 
-    costo_unitario = (costo_total / total_ingresado) if total_ingresado > 0 else 0
-    costo_muertos = costo_unitario * total_muerto
-    costo_vendidos = costo_unitario * total_vendido
+    unidades_vendibles = total_ingresado - total_muerto
+    costo_unitario_ajustado = (costo_total / unidades_vendibles) if unidades_vendibles > 0 else 0
 
-    if costo_vendidos > 0:
-        margen = ((ingreso_ventas - costo_vendidos - costo_muertos) / costo_vendidos) * 100
-    elif costo_total > 0:
+    if total_vendido > 0 and costo_unitario_ajustado > 0:
+        costo_de_vendidos = costo_unitario_ajustado * total_vendido
+        margen = ((ingreso_ventas - costo_de_vendidos) / costo_de_vendidos) * 100
+    elif costo_total > 0 and unidades_vendibles <= 0:
         margen = -100.0
     else:
         margen = 0
@@ -110,7 +119,7 @@ def calcular_estadisticas(especie):
         'total_muerto': total_muerto,
         'stock': stock,
         'costo_total': costo_total,
-        'costo_muertos': round(costo_muertos, 2),
+        'costo_unitario_ajustado': round(costo_unitario_ajustado, 2),
         'ingreso_ventas': ingreso_ventas,
         'mortalidad': round(mortalidad, 1),
         'margen': round(margen, 1),
@@ -178,7 +187,7 @@ def logout():
 @app.route('/')
 @login_required
 def dashboard():
-    especies = get_especies_usuario()
+    especies = Especie.query.filter_by(usuario_id=session['usuario_id']).order_by(Especie.nombre).all()
     datos = []
     for esp in especies:
         stats = calcular_estadisticas(esp)
@@ -190,7 +199,7 @@ def dashboard():
 @app.route('/especies')
 @login_required
 def lista_especies():
-    especies = get_especies_usuario()
+    especies = Especie.query.filter_by(usuario_id=session['usuario_id']).order_by(Especie.nombre).all()
     return render_template('especies.html', especies=especies)
 
 
@@ -247,12 +256,13 @@ def nuevo_lote():
             flash('Cantidad debe ser al menos 1 y costo no puede ser negativo.', 'danger')
             return redirect(url_for('nuevo_lote'))
         lote = Lote(especie_id=especie.id, cantidad=cantidad, costo_total=costo_total, fecha=fecha)
+        incrementar_uso(especie)
         db.session.add(lote)
         db.session.commit()
         flash('Lote registrado.', 'success')
         return redirect(url_for('lista_lotes'))
-    especies = get_especies_usuario()
-    return render_template('nuevo_lote.html', especies=especies, hoy=date.today().isoformat())
+    frecuentes, resto = get_especies_usuario()
+    return render_template('nuevo_lote.html', frecuentes=frecuentes, resto=resto, hoy=date.today().isoformat())
 
 
 @app.route('/ventas')
@@ -283,12 +293,13 @@ def nueva_venta():
             flash(f'Stock insuficiente. Disponible: {stats["stock"]}', 'danger')
             return redirect(url_for('nueva_venta'))
         venta = Venta(especie_id=especie.id, cantidad=cantidad, precio_unidad=precio_unidad, fecha=fecha)
+        incrementar_uso(especie)
         db.session.add(venta)
         db.session.commit()
         flash('Venta registrada.', 'success')
         return redirect(url_for('lista_ventas'))
-    especies = get_especies_usuario()
-    return render_template('nueva_venta.html', especies=especies, hoy=date.today().isoformat())
+    frecuentes, resto = get_especies_usuario()
+    return render_template('nueva_venta.html', frecuentes=frecuentes, resto=resto, hoy=date.today().isoformat())
 
 
 @app.route('/muertes')
@@ -319,12 +330,13 @@ def nueva_muerte():
             flash(f'No puedes registrar mas muertes que el stock disponible ({stats["stock"]}).', 'danger')
             return redirect(url_for('nueva_muerte'))
         muerte = Muerte(especie_id=especie.id, cantidad=cantidad, fecha=fecha, nota=nota)
+        incrementar_uso(especie)
         db.session.add(muerte)
         db.session.commit()
         flash('Muerte registrada.', 'success')
         return redirect(url_for('lista_muertes'))
-    especies = get_especies_usuario()
-    return render_template('nueva_muerte.html', especies=especies, hoy=date.today().isoformat())
+    frecuentes, resto = get_especies_usuario()
+    return render_template('nueva_muerte.html', frecuentes=frecuentes, resto=resto, hoy=date.today().isoformat())
 
 
 with app.app_context():
