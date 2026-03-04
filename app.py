@@ -105,6 +105,8 @@ def calcular_estadisticas(especie):
     unidades_vendibles = total_ingresado - total_muerto
     costo_unitario_ajustado = (costo_total / unidades_vendibles) if unidades_vendibles > 0 else 0
 
+    precio_minimo_recomendado = round(costo_unitario_ajustado * 1.20, 2)
+
     if total_vendido > 0 and costo_unitario_ajustado > 0:
         costo_de_vendidos = costo_unitario_ajustado * total_vendido
         margen = ((ingreso_ventas - costo_de_vendidos) / costo_de_vendidos) * 100
@@ -120,10 +122,26 @@ def calcular_estadisticas(especie):
         'stock': stock,
         'costo_total': costo_total,
         'costo_unitario_ajustado': round(costo_unitario_ajustado, 2),
+        'precio_minimo_recomendado': precio_minimo_recomendado,
         'ingreso_ventas': ingreso_ventas,
         'mortalidad': round(mortalidad, 1),
         'margen': round(margen, 1),
     }
+
+
+@app.route('/api/especie/<int:especie_id>/stats')
+@login_required
+def api_especie_stats(especie_id):
+    especie = Especie.query.filter_by(
+        id=especie_id, usuario_id=session['usuario_id']
+    ).first_or_404()
+    stats = calcular_estadisticas(especie)
+    return jsonify({
+        'nombre': especie.nombre,
+        'stock': stats['stock'],
+        'costo_unitario_ajustado': stats['costo_unitario_ajustado'],
+        'precio_minimo_recomendado': stats['precio_minimo_recomendado'],
+    })
 
 
 @app.route('/registro', methods=['GET', 'POST'])
@@ -189,11 +207,36 @@ def logout():
 def dashboard():
     especies = Especie.query.filter_by(usuario_id=session['usuario_id']).order_by(Especie.nombre).all()
     datos = []
+    alertas = []
     for esp in especies:
         stats = calcular_estadisticas(esp)
         datos.append({'especie': esp, **stats})
+        if stats['mortalidad'] > 25 and stats['total_ingresado'] > 0:
+            alertas.append({
+                'tipo': 'mortalidad',
+                'especie': esp.nombre,
+                'valor': stats['mortalidad'],
+            })
+        if stats['margen'] < 0 and stats['total_vendido'] > 0:
+            alertas.append({
+                'tipo': 'margen_negativo',
+                'especie': esp.nombre,
+                'valor': stats['margen'],
+            })
+
+    top_rentables = sorted(
+        [d for d in datos if d['margen'] > 0 and d['total_vendido'] > 0],
+        key=lambda x: -x['margen']
+    )[:3]
+
     usuario = get_usuario()
-    return render_template('dashboard.html', datos=datos, usuario=usuario)
+    return render_template(
+        'dashboard.html',
+        datos=datos,
+        alertas=alertas,
+        top_rentables=top_rentables,
+        usuario=usuario,
+    )
 
 
 @app.route('/especies')

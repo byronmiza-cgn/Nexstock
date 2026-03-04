@@ -4,34 +4,84 @@
 <h2 class="mb-4"><i class="bi bi-speedometer2"></i> Dashboard de Inventario</h2>
 
 {% if datos %}
+
+{% if alertas %}
+<div class="mb-4">
+    {% for a in alertas %}
+        {% if a.tipo == 'mortalidad' %}
+        <div class="alert alert-danger d-flex align-items-center" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+            <div>
+                <strong>Alta mortalidad:</strong> {{ a.especie }} tiene {{ a.valor }}% de mortalidad. Revisa las condiciones del acuario.
+            </div>
+        </div>
+        {% elif a.tipo == 'margen_negativo' %}
+        <div class="alert alert-warning d-flex align-items-center" role="alert">
+            <i class="bi bi-graph-down-arrow me-2 fs-5"></i>
+            <div>
+                <strong>Margen negativo:</strong> {{ a.especie }} tiene un margen de {{ a.valor }}%. Estas perdiendo dinero con esta especie.
+            </div>
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
+
 <div class="row mb-4">
-    <div class="col-md-3">
+    <div class="col-6 col-md-3 mb-3">
         <div class="card stat-card">
             <div class="stat-value text-primary">{{ datos|length }}</div>
             <div class="stat-label">Especies</div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3 mb-3">
         <div class="card stat-card">
             <div class="stat-value text-success">{{ datos|sum(attribute='stock') }}</div>
             <div class="stat-label">Stock Total</div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3 mb-3">
         <div class="card stat-card">
             <div class="stat-value text-info">{{ datos|sum(attribute='total_vendido') }}</div>
-            <div class="stat-label">Total Vendidos</div>
+            <div class="stat-label">Vendidos</div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 col-md-3 mb-3">
         <div class="card stat-card">
             <div class="stat-value text-danger">{{ datos|sum(attribute='total_muerto') }}</div>
-            <div class="stat-label">Total Muertes</div>
+            <div class="stat-label">Muertes</div>
         </div>
     </div>
 </div>
 
-<div class="card">
+{% if top_rentables %}
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <i class="bi bi-trophy"></i> Top 3 Especies Mas Rentables
+    </div>
+    <div class="card-body p-0">
+        <div class="row g-0">
+            {% for d in top_rentables %}
+            <div class="col-md-4 {% if not loop.last %}border-end{% endif %}">
+                <div class="p-3 text-center">
+                    <div class="fs-5 fw-bold">{{ d.especie.nombre }}</div>
+                    <span class="badge bg-secondary mb-2">{{ d.especie.categoria }}</span>
+                    <div class="text-success fs-4 fw-bold">{{ d.margen }}%</div>
+                    <div class="text-muted small">margen</div>
+                    <div class="mt-1 small">
+                        Costo: ${{ "%.2f"|format(d.costo_unitario_ajustado) }}/u
+                        &middot;
+                        Vendidos: {{ d.total_vendido }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="card d-none d-lg-block">
     <div class="card-header bg-primary text-white">
         <i class="bi bi-table"></i> Resumen por Especie
     </div>
@@ -41,14 +91,9 @@
                 <thead class="table-light">
                     <tr>
                         <th>Especie</th>
-                        <th>Categor&iacute;a</th>
-                        <th class="text-center">Ingresados</th>
-                        <th class="text-center">Vendidos</th>
-                        <th class="text-center">Muertes</th>
                         <th class="text-center">Stock</th>
                         <th class="text-center">Mortalidad</th>
-                        <th class="text-end">Costo Total</th>
-                        <th class="text-end">Costo/U Ajustado</th>
+                        <th class="text-end">Costo/U</th>
                         <th class="text-end">Ingresos</th>
                         <th class="text-center">Margen</th>
                     </tr>
@@ -56,11 +101,10 @@
                 <tbody>
                     {% for d in datos %}
                     <tr>
-                        <td><strong>{{ d.especie.nombre }}</strong></td>
-                        <td><span class="badge bg-secondary">{{ d.especie.categoria }}</span></td>
-                        <td class="text-center">{{ d.total_ingresado }}</td>
-                        <td class="text-center">{{ d.total_vendido }}</td>
-                        <td class="text-center">{{ d.total_muerto }}</td>
+                        <td>
+                            <strong>{{ d.especie.nombre }}</strong>
+                            <span class="badge bg-secondary ms-1">{{ d.especie.categoria }}</span>
+                        </td>
                         <td class="text-center">
                             {% if d.stock > 5 %}
                                 <span class="badge badge-stock-ok">{{ d.stock }}</span>
@@ -73,13 +117,12 @@
                         <td class="text-center">
                             {% if d.mortalidad < 5 %}
                                 <span class="badge badge-mortality-low">{{ d.mortalidad }}%</span>
-                            {% elif d.mortalidad < 15 %}
+                            {% elif d.mortalidad < 25 %}
                                 <span class="badge badge-mortality-med">{{ d.mortalidad }}%</span>
                             {% else %}
                                 <span class="badge badge-mortality-high">{{ d.mortalidad }}%</span>
                             {% endif %}
                         </td>
-                        <td class="text-end">${{ "%.2f"|format(d.costo_total) }}</td>
                         <td class="text-end">${{ "%.2f"|format(d.costo_unitario_ajustado) }}</td>
                         <td class="text-end">${{ "%.2f"|format(d.ingreso_ventas) }}</td>
                         <td class="text-center">
@@ -98,6 +141,69 @@
         </div>
     </div>
 </div>
+
+<div class="d-lg-none">
+    {% for d in datos %}
+    <div class="card species-card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h6 class="mb-0 fw-bold">{{ d.especie.nombre }}</h6>
+                    <span class="badge bg-secondary">{{ d.especie.categoria }}</span>
+                </div>
+                <div class="text-end">
+                    {% if d.stock > 5 %}
+                        <span class="badge badge-stock-ok fs-6">{{ d.stock }}</span>
+                    {% elif d.stock > 0 %}
+                        <span class="badge badge-stock-low fs-6">{{ d.stock }}</span>
+                    {% else %}
+                        <span class="badge badge-stock-zero fs-6">{{ d.stock }}</span>
+                    {% endif %}
+                    <div class="text-muted small">stock</div>
+                </div>
+            </div>
+            <div class="row text-center g-2">
+                <div class="col-3">
+                    <div class="small text-muted">Ingreso</div>
+                    <div class="fw-bold">{{ d.total_ingresado }}</div>
+                </div>
+                <div class="col-3">
+                    <div class="small text-muted">Vendido</div>
+                    <div class="fw-bold">{{ d.total_vendido }}</div>
+                </div>
+                <div class="col-3">
+                    <div class="small text-muted">Mortalidad</div>
+                    <div>
+                        {% if d.mortalidad < 5 %}
+                            <span class="badge badge-mortality-low">{{ d.mortalidad }}%</span>
+                        {% elif d.mortalidad < 25 %}
+                            <span class="badge badge-mortality-med">{{ d.mortalidad }}%</span>
+                        {% else %}
+                            <span class="badge badge-mortality-high">{{ d.mortalidad }}%</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-3">
+                    <div class="small text-muted">Margen</div>
+                    <div>
+                        {% if d.margen > 0 %}
+                            <span class="text-success fw-bold">{{ d.margen }}%</span>
+                        {% elif d.margen < 0 %}
+                            <span class="text-danger fw-bold">{{ d.margen }}%</span>
+                        {% else %}
+                            <span class="text-muted">0%</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="mt-2 small text-muted">
+                Costo/U: ${{ "%.2f"|format(d.costo_unitario_ajustado) }} &middot; Ingresos: ${{ "%.2f"|format(d.ingreso_ventas) }}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
 {% else %}
 <div class="text-center mt-5">
     <i class="bi bi-droplet" style="font-size: 4rem; color: #0d6efd;"></i>

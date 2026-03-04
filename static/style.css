@@ -19,16 +19,16 @@ body {
 
 .stat-card {
     text-align: center;
-    padding: 1.2rem;
+    padding: 1rem;
 }
 
 .stat-card .stat-value {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     font-weight: 700;
 }
 
 .stat-card .stat-label {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #6c757d;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -65,4 +65,26 @@ body {
 
 .badge-mortality-high {
     background-color: #dc3545;
+}
+
+.species-card {
+    transition: box-shadow 0.2s;
+}
+
+.species-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+@media (max-width: 576px) {
+    .stat-card .stat-value {
+        font-size: 1.3rem;
+    }
+
+    .stat-card .stat-label {
+        font-size: 0.7rem;
+    }
+
+    h2 {
+        font-size: 1.4rem;
+    }
 }
