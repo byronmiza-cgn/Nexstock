@@ -1,37 +1,116 @@
+:root {
+    --nex-primary: #1E3A8A;
+    --nex-secondary: #3B82F6;
+    --nex-success: #16A34A;
+    --nex-warning: #F59E0B;
+    --nex-danger: #DC2626;
+    --nex-bg: #F3F4F6;
+    --nex-text: #111827;
+    --nex-text-muted: #6B7280;
+}
+
 body {
-    background-color: #f0f6fa;
+    background-color: var(--nex-bg);
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    color: var(--nex-text);
+}
+
+a {
+    color: var(--nex-secondary);
+}
+
+a:hover {
+    color: var(--nex-primary);
+}
+
+.navbar-nex {
+    background-color: var(--nex-primary);
 }
 
 .navbar-brand {
     font-weight: 700;
-    font-size: 1.4rem;
+    font-size: 1.3rem;
+    letter-spacing: 0.3px;
+}
+
+.navbar-brand .bi {
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+.footer-text {
+    color: var(--nex-text-muted);
+}
+
+.btn-primary {
+    background-color: var(--nex-primary);
+    border-color: var(--nex-primary);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: #1e40af;
+    border-color: #1e40af;
+}
+
+.btn-outline-nex {
+    color: var(--nex-primary);
+    border-color: var(--nex-primary);
+    background: transparent;
+}
+
+.btn-outline-nex:hover,
+.btn-check:checked + .btn-outline-nex {
+    background-color: var(--nex-primary);
+    border-color: var(--nex-primary);
+    color: #fff;
 }
 
 .card {
     border: none;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
 }
 
 .card-header {
-    border-radius: 10px 10px 0 0 !important;
+    border-radius: 8px 8px 0 0 !important;
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
-.stat-card {
-    text-align: center;
-    padding: 1rem;
+.header-finance {
+    background-color: var(--nex-primary);
+    color: #fff;
 }
 
-.stat-card .stat-value {
-    font-size: 1.6rem;
-    font-weight: 700;
+.header-primary {
+    background-color: var(--nex-primary);
+    color: #fff;
 }
 
-.stat-card .stat-label {
-    font-size: 0.8rem;
-    color: #6c757d;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.header-success {
+    background-color: var(--nex-success);
+    color: #fff;
+}
+
+.text-nex-primary {
+    color: var(--nex-primary) !important;
+}
+
+.text-nex-secondary {
+    color: var(--nex-secondary) !important;
+}
+
+.text-nex-success {
+    color: var(--nex-success) !important;
+}
+
+.text-nex-danger {
+    color: var(--nex-danger) !important;
+}
+
+.text-nex-warning {
+    color: var(--nex-warning) !important;
 }
 
 .finance-card {
@@ -40,16 +119,56 @@ body {
 }
 
 .finance-card .finance-value {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
     font-weight: 700;
 }
 
 .finance-card .finance-label {
+    font-size: 0.7rem;
+    color: var(--nex-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 0.3rem;
+}
+
+.finance-hero {
+    padding: 1.8rem 1rem;
+}
+
+.finance-hero .finance-hero-value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.finance-hero .finance-label {
     font-size: 0.75rem;
-    color: #6c757d;
+    margin-bottom: 0.4rem;
+}
+
+.ganancia-positiva {
+    background-color: #DCFCE7;
+}
+
+.ganancia-negativa {
+    background-color: #FEE2E2;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 1.2rem;
+}
+
+.stat-card .stat-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+
+.stat-card .stat-label {
+    font-size: 0.75rem;
+    color: var(--nex-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-top: 0.2rem;
 }
 
 .period-filter .btn {
@@ -58,62 +177,64 @@ body {
     font-size: 0.85rem;
 }
 
-.period-filter .btn-check:checked + .btn-outline-primary {
-    background-color: #0d6efd;
-    color: #fff;
-}
-
 .suggestion-card {
     border-left: 4px solid;
     border-radius: 8px;
 }
 
 .suggestion-card.suggestion-danger {
-    border-left-color: #dc3545;
-    background-color: #fff5f5;
+    border-left-color: var(--nex-danger);
+    background-color: #FEE2E2;
 }
 
 .suggestion-card.suggestion-warning {
-    border-left-color: #ffc107;
-    background-color: #fffbeb;
+    border-left-color: var(--nex-warning);
+    background-color: #FEF3C7;
 }
 
 .suggestion-card.suggestion-success {
-    border-left-color: #28a745;
-    background-color: #f0fff4;
+    border-left-color: var(--nex-success);
+    background-color: #DCFCE7;
 }
 
 .table th {
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     text-transform: uppercase;
-    color: #495057;
+    color: var(--nex-text-muted);
+    letter-spacing: 0.3px;
+}
+
+.badge-cat {
+    background-color: #E5E7EB;
+    color: var(--nex-text);
+    font-weight: 500;
 }
 
 .badge-stock-ok {
-    background-color: #28a745;
+    background-color: var(--nex-success);
 }
 
 .badge-stock-low {
-    background-color: #ffc107;
-    color: #212529;
+    background-color: var(--nex-warning);
+    color: #111827;
 }
 
 .badge-stock-zero {
-    background-color: #dc3545;
+    background-color: var(--nex-danger);
 }
 
 .badge-mortality-low {
-    background-color: #28a745;
+    background-color: var(--nex-success);
 }
 
 .badge-mortality-med {
-    background-color: #ffc107;
-    color: #212529;
+    background-color: var(--nex-warning);
+    color: #111827;
 }
 
 .badge-mortality-high {
-    background-color: #dc3545;
+    background-color: var(--nex-danger);
 }
 
 .species-card {
@@ -121,7 +242,12 @@ body {
 }
 
 .species-card:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.form-control:focus {
+    border-color: var(--nex-secondary);
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
 }
 
 @media (max-width: 576px) {
@@ -130,19 +256,27 @@ body {
     }
 
     .stat-card .stat-label {
-        font-size: 0.7rem;
-    }
-
-    .finance-card .finance-value {
-        font-size: 1.1rem;
-    }
-
-    .finance-card .finance-label {
         font-size: 0.65rem;
     }
 
+    .finance-card .finance-value {
+        font-size: 1rem;
+    }
+
+    .finance-card .finance-label {
+        font-size: 0.6rem;
+    }
+
+    .finance-hero {
+        padding: 1.4rem 0.8rem;
+    }
+
+    .finance-hero .finance-hero-value {
+        font-size: 1.8rem;
+    }
+
     h2 {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
     }
 
     .period-filter .btn {

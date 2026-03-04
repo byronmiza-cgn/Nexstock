@@ -13,16 +13,16 @@
         <form method="GET" action="/" class="period-filter">
             <div class="d-flex flex-wrap align-items-center gap-2">
                 <input type="radio" class="btn-check" name="periodo" id="p-hoy" value="hoy" autocomplete="off" {% if periodo == 'hoy' %}checked{% endif %} onchange="this.form.submit()">
-                <label class="btn btn-outline-primary btn-sm" for="p-hoy">Hoy</label>
+                <label class="btn btn-outline-nex btn-sm" for="p-hoy">Hoy</label>
 
                 <input type="radio" class="btn-check" name="periodo" id="p-semana" value="semana" autocomplete="off" {% if periodo == 'semana' %}checked{% endif %} onchange="this.form.submit()">
-                <label class="btn btn-outline-primary btn-sm" for="p-semana">Semana</label>
+                <label class="btn btn-outline-nex btn-sm" for="p-semana">Semana</label>
 
                 <input type="radio" class="btn-check" name="periodo" id="p-mes" value="mes" autocomplete="off" {% if periodo == 'mes' %}checked{% endif %} onchange="this.form.submit()">
-                <label class="btn btn-outline-primary btn-sm" for="p-mes">Mes</label>
+                <label class="btn btn-outline-nex btn-sm" for="p-mes">Mes</label>
 
                 <input type="radio" class="btn-check" name="periodo" id="p-custom" value="custom" autocomplete="off" {% if periodo == 'custom' %}checked{% endif %}>
-                <label class="btn btn-outline-primary btn-sm" for="p-custom">Personalizado</label>
+                <label class="btn btn-outline-nex btn-sm" for="p-custom">Personalizado</label>
 
                 <div id="custom-dates" class="d-flex gap-2 align-items-center {% if periodo != 'custom' %}d-none{% endif %}">
                     <input type="date" class="form-control form-control-sm" name="desde" value="{{ fecha_inicio }}" style="max-width: 140px;">
@@ -36,35 +36,39 @@
 </div>
 
 <div class="card mb-4">
-    <div class="card-header bg-dark text-white">
+    <div class="card-header header-finance">
         <i class="bi bi-cash-stack"></i> Resumen Financiero
     </div>
     <div class="card-body p-0">
         <div class="row g-0">
-            <div class="col-6 col-md-3 border-end border-bottom">
-                <div class="finance-card">
-                    <div class="finance-value text-primary">${{ "%.2f"|format(balance.total_invertido) }}</div>
-                    <div class="finance-label">Invertido</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3 border-bottom">
-                <div class="finance-card">
-                    <div class="finance-value text-info">${{ "%.2f"|format(balance.total_recuperado) }}</div>
-                    <div class="finance-label">Recuperado</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3 border-end">
-                <div class="finance-card">
-                    <div class="finance-value {% if balance.ganancia_neta >= 0 %}text-success{% else %}text-danger{% endif %}">
+            <div class="col-12 col-md-6 border-bottom">
+                <div class="finance-card finance-hero {% if balance.ganancia_neta >= 0 %}ganancia-positiva{% else %}ganancia-negativa{% endif %}">
+                    <div class="finance-label">Ganancia Neta</div>
+                    <div class="finance-hero-value {% if balance.ganancia_neta >= 0 %}text-nex-success{% else %}text-nex-danger{% endif %}">
                         ${{ "%.2f"|format(balance.ganancia_neta) }}
                     </div>
-                    <div class="finance-label">Ganancia Neta</div>
                 </div>
             </div>
-            <div class="col-6 col-md-3">
-                <div class="finance-card">
-                    <div class="finance-value text-dark">${{ "%.2f"|format(valor_inventario_total) }}</div>
-                    <div class="finance-label">Valor Inventario</div>
+            <div class="col-12 col-md-6">
+                <div class="row g-0 h-100">
+                    <div class="col-4 border-end border-bottom">
+                        <div class="finance-card">
+                            <div class="finance-label">Invertido</div>
+                            <div class="finance-value text-nex-primary">${{ "%.2f"|format(balance.total_invertido) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-4 border-end border-bottom">
+                        <div class="finance-card">
+                            <div class="finance-label">Recuperado</div>
+                            <div class="finance-value text-nex-secondary">${{ "%.2f"|format(balance.total_recuperado) }}</div>
+                        </div>
+                    </div>
+                    <div class="col-4 border-bottom">
+                        <div class="finance-card">
+                            <div class="finance-label">Inventario</div>
+                            <div class="finance-value" style="color: #111827;">${{ "%.2f"|format(valor_inventario_total) }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -83,7 +87,7 @@
 {% else %}
     <div class="card suggestion-card suggestion-success mb-3">
         <div class="card-body py-2 d-flex align-items-center">
-            <i class="bi bi-check-circle-fill me-2 fs-5 text-success"></i>
+            <i class="bi bi-check-circle-fill me-2 fs-5 text-nex-success"></i>
             <div>Negocio saludable en este periodo.</div>
         </div>
     </div>
@@ -92,25 +96,25 @@
 <div class="row mb-4">
     <div class="col-6 col-md-3 mb-3">
         <div class="card stat-card">
-            <div class="stat-value text-primary">{{ datos|length }}</div>
+            <div class="stat-value text-nex-primary">{{ datos|length }}</div>
             <div class="stat-label">Especies</div>
         </div>
     </div>
     <div class="col-6 col-md-3 mb-3">
         <div class="card stat-card">
-            <div class="stat-value text-success">{{ datos|sum(attribute='stock') }}</div>
+            <div class="stat-value text-nex-success">{{ datos|sum(attribute='stock') }}</div>
             <div class="stat-label">Stock Total</div>
         </div>
     </div>
     <div class="col-6 col-md-3 mb-3">
         <div class="card stat-card">
-            <div class="stat-value text-info">{{ datos|sum(attribute='total_vendido') }}</div>
+            <div class="stat-value text-nex-secondary">{{ datos|sum(attribute='total_vendido') }}</div>
             <div class="stat-label">Vendidos</div>
         </div>
     </div>
     <div class="col-6 col-md-3 mb-3">
         <div class="card stat-card">
-            <div class="stat-value text-danger">{{ datos|sum(attribute='total_muerto') }}</div>
+            <div class="stat-value text-nex-danger">{{ datos|sum(attribute='total_muerto') }}</div>
             <div class="stat-label">Muertes</div>
         </div>
     </div>
@@ -118,7 +122,7 @@
 
 {% if top_rentables %}
 <div class="card mb-4">
-    <div class="card-header bg-success text-white">
+    <div class="card-header header-success">
         <i class="bi bi-trophy"></i> Top 3 Mas Rentables
     </div>
     <div class="card-body p-0">
@@ -127,11 +131,11 @@
             <div class="col-md-4 {% if not loop.last %}border-end{% endif %}">
                 <div class="p-3 text-center">
                     <div class="fs-5 fw-bold">{{ d.especie.nombre }}</div>
-                    <span class="badge bg-secondary mb-2">{{ d.especie.categoria }}</span>
-                    <div class="text-success fs-4 fw-bold">{{ d.margen }}%</div>
+                    <span class="badge badge-cat mb-2">{{ d.especie.categoria }}</span>
+                    <div class="text-nex-success fs-4 fw-bold">{{ d.margen }}%</div>
                     <div class="text-muted small">margen</div>
                     <div class="mt-1 small">
-                        Ganancia: <strong class="text-success">${{ "%.2f"|format(d.ganancia_real) }}</strong>
+                        Ganancia: <strong class="text-nex-success">${{ "%.2f"|format(d.ganancia_real) }}</strong>
                     </div>
                 </div>
             </div>
@@ -142,7 +146,7 @@
 {% endif %}
 
 <div class="card d-none d-lg-block mb-4">
-    <div class="card-header bg-primary text-white">
+    <div class="card-header header-primary">
         <i class="bi bi-table"></i> Detalle por Especie
     </div>
     <div class="card-body p-0">
@@ -164,7 +168,7 @@
                     <tr>
                         <td>
                             <strong>{{ d.especie.nombre }}</strong>
-                            <span class="badge bg-secondary ms-1">{{ d.especie.categoria }}</span>
+                            <span class="badge badge-cat ms-1">{{ d.especie.categoria }}</span>
                         </td>
                         <td class="text-center">
                             {% if d.stock > 5 %}
@@ -188,18 +192,18 @@
                         <td class="text-end">${{ "%.2f"|format(d.ingreso_ventas) }}</td>
                         <td class="text-end">
                             {% if d.ganancia_real > 0 %}
-                                <span class="text-success fw-bold">${{ "%.2f"|format(d.ganancia_real) }}</span>
+                                <span class="text-nex-success fw-bold">${{ "%.2f"|format(d.ganancia_real) }}</span>
                             {% elif d.ganancia_real < 0 %}
-                                <span class="text-danger fw-bold">${{ "%.2f"|format(d.ganancia_real) }}</span>
+                                <span class="text-nex-danger fw-bold">${{ "%.2f"|format(d.ganancia_real) }}</span>
                             {% else %}
                                 <span class="text-muted">$0.00</span>
                             {% endif %}
                         </td>
                         <td class="text-center">
                             {% if d.margen > 0 %}
-                                <span class="text-success fw-bold">{{ d.margen }}%</span>
+                                <span class="text-nex-success fw-bold">{{ d.margen }}%</span>
                             {% elif d.margen < 0 %}
-                                <span class="text-danger fw-bold">{{ d.margen }}%</span>
+                                <span class="text-nex-danger fw-bold">{{ d.margen }}%</span>
                             {% else %}
                                 <span class="text-muted">0%</span>
                             {% endif %}
@@ -219,7 +223,7 @@
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <div>
                     <h6 class="mb-0 fw-bold">{{ d.especie.nombre }}</h6>
-                    <span class="badge bg-secondary">{{ d.especie.categoria }}</span>
+                    <span class="badge badge-cat">{{ d.especie.categoria }}</span>
                 </div>
                 <div class="text-end">
                     {% if d.stock > 5 %}
@@ -249,9 +253,9 @@
                     <div class="small text-muted">Margen</div>
                     <div>
                         {% if d.margen > 0 %}
-                            <span class="text-success fw-bold">{{ d.margen }}%</span>
+                            <span class="text-nex-success fw-bold">{{ d.margen }}%</span>
                         {% elif d.margen < 0 %}
-                            <span class="text-danger fw-bold">{{ d.margen }}%</span>
+                            <span class="text-nex-danger fw-bold">{{ d.margen }}%</span>
                         {% else %}
                             <span class="text-muted">0%</span>
                         {% endif %}
@@ -265,9 +269,9 @@
                     <div class="small text-muted">Ganancia</div>
                     <div>
                         {% if d.ganancia_real > 0 %}
-                            <span class="text-success fw-bold small">${{ "%.2f"|format(d.ganancia_real) }}</span>
+                            <span class="text-nex-success fw-bold small">${{ "%.2f"|format(d.ganancia_real) }}</span>
                         {% elif d.ganancia_real < 0 %}
-                            <span class="text-danger fw-bold small">${{ "%.2f"|format(d.ganancia_real) }}</span>
+                            <span class="text-nex-danger fw-bold small">${{ "%.2f"|format(d.ganancia_real) }}</span>
                         {% else %}
                             <span class="text-muted small">$0.00</span>
                         {% endif %}
@@ -281,8 +285,8 @@
 
 {% else %}
 <div class="text-center mt-5">
-    <i class="bi bi-droplet" style="font-size: 4rem; color: #0d6efd;"></i>
-    <h4 class="mt-3">Bienvenido a AquaStock</h4>
+    <i class="bi bi-bar-chart-line" style="font-size: 4rem; color: #1E3A8A;"></i>
+    <h4 class="mt-3">Bienvenido a NexStock</h4>
     <p class="text-muted">Comienza registrando tus especies para llevar el control de tu inventario.</p>
     <a href="/especies/nueva" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Registrar Primera Especie</a>
 </div>
