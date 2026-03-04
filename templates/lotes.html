@@ -28,12 +28,12 @@
                         <td>{{ l.id }}</td>
                         <td><strong>{{ l.especie.nombre }}</strong></td>
                         <td class="text-center">{{ l.cantidad }}</td>
-                        <td class="text-end">${{ "%.2f"|format(l.costo_total) }}</td>
-                        <td class="text-end">${{ "%.2f"|format(l.costo_total / l.cantidad) }}</td>
+                        <td class="text-end">{{ formato_moneda(l.costo_total) }}</td>
+                        <td class="text-end">{{ formato_moneda(l.costo_total / l.cantidad) }}</td>
                         <td>{{ l.fecha.strftime('%d/%m/%Y') }}</td>
                         <td class="text-center">
                             <a href="{{ url_for('editar_lote', id=l.id) }}" class="btn btn-outline-secondary btn-sm" title="Editar"><i class="bi bi-pencil"></i></a>
-                            <button type="button" class="btn btn-outline-danger btn-sm" title="Eliminar" onclick="confirmarEliminar('{{ url_for('eliminar_lote', id=l.id) }}', 'lote #{{ l.id }} de {{ l.especie.nombre }}')"><i class="bi bi-trash"></i></button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" title="Eliminar" onclick="confirmarEliminar({{ url_for('eliminar_lote', id=l.id) | tojson }}, {{ ('lote #' ~ l.id ~ ' de ' ~ l.especie.nombre) | tojson }})"><i class="bi bi-trash"></i></button>
                         </td>
                     </tr>
                     {% endfor %}

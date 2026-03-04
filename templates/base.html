@@ -43,6 +43,16 @@
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item text-danger" href="/logout"><i class="bi bi-box-arrow-right"></i> Cerrar Sesion</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="px-3">
+                                <form action="/set_currency" method="post" class="d-flex align-items-center">
+                                    <select name="currency" class="form-select form-select-sm me-2">
+                                        <option value="GTQ" {% if session.get('currency','GTQ') == 'GTQ' %}selected{% endif %}>Quetzal (Q)</option>
+                                        <option value="USD" {% if session.get('currency') == 'USD' %}selected{% endif %}>Dólar ($)</option>
+                                    </select>
+                                    <button class="btn btn-sm btn-primary" type="submit">Guardar</button>
+                                </form>
+                            </li>
                         </ul>
                     </li>
                 </ul>

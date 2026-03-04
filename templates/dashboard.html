@@ -45,7 +45,7 @@
                 <div class="finance-card finance-hero {% if balance.ganancia_neta >= 0 %}ganancia-positiva{% else %}ganancia-negativa{% endif %}">
                     <div class="finance-label">Ganancia Neta</div>
                     <div class="finance-hero-value {% if balance.ganancia_neta >= 0 %}text-nex-success{% else %}text-nex-danger{% endif %}">
-                        ${{ "%.2f"|format(balance.ganancia_neta) }}
+                        {{ formato_moneda(balance.ganancia_neta) }}
                     </div>
                 </div>
             </div>
@@ -54,19 +54,19 @@
                     <div class="col-4 border-end border-bottom">
                         <div class="finance-card">
                             <div class="finance-label">Invertido</div>
-                            <div class="finance-value text-nex-primary">${{ "%.2f"|format(balance.total_invertido) }}</div>
+                            <div class="finance-value text-nex-primary">{{ formato_moneda(balance.total_invertido) }}</div>
                         </div>
                     </div>
                     <div class="col-4 border-end border-bottom">
                         <div class="finance-card">
                             <div class="finance-label">Recuperado</div>
-                            <div class="finance-value text-nex-secondary">${{ "%.2f"|format(balance.total_recuperado) }}</div>
+                            <div class="finance-value text-nex-secondary">{{ formato_moneda(balance.total_recuperado) }}</div>
                         </div>
                     </div>
                     <div class="col-4 border-bottom">
                         <div class="finance-card">
                             <div class="finance-label">Inventario</div>
-                            <div class="finance-value" style="color: #111827;">${{ "%.2f"|format(valor_inventario_total) }}</div>
+                            <div class="finance-value" style="color: #111827;">{{ formato_moneda(valor_inventario_total) }}</div>
                         </div>
                     </div>
                 </div>
@@ -135,7 +135,7 @@
                     <div class="text-nex-success fs-4 fw-bold">{{ d.margen }}%</div>
                     <div class="text-muted small">margen</div>
                     <div class="mt-1 small">
-                        Ganancia: <strong class="text-nex-success">${{ "%.2f"|format(d.ganancia_real) }}</strong>
+                        Ganancia: <strong class="text-nex-success">{{ formato_moneda(d.ganancia_real) }}</strong>
                     </div>
                 </div>
             </div>
@@ -188,15 +188,15 @@
                                 <span class="badge badge-mortality-high">{{ d.mortalidad }}%</span>
                             {% endif %}
                         </td>
-                        <td class="text-end">${{ "%.2f"|format(d.costo_unitario_ajustado) }}</td>
-                        <td class="text-end">${{ "%.2f"|format(d.ingreso_ventas) }}</td>
+                        <td class="text-end">{{ formato_moneda(d.costo_unitario_ajustado) }}</td>
+                        <td class="text-end">{{ formato_moneda(d.ingreso_ventas) }}</td>
                         <td class="text-end">
                             {% if d.ganancia_real > 0 %}
-                                <span class="text-nex-success fw-bold">${{ "%.2f"|format(d.ganancia_real) }}</span>
+                                <span class="text-nex-success fw-bold">{{ formato_moneda(d.ganancia_real) }}</span>
                             {% elif d.ganancia_real < 0 %}
-                                <span class="text-nex-danger fw-bold">${{ "%.2f"|format(d.ganancia_real) }}</span>
+                                <span class="text-nex-danger fw-bold">{{ formato_moneda(d.ganancia_real) }}</span>
                             {% else %}
-                                <span class="text-muted">$0.00</span>
+                                <span class="text-muted">{{ formato_moneda(0) }}</span>
                             {% endif %}
                         </td>
                         <td class="text-center">
@@ -263,17 +263,17 @@
                 </div>
                 <div class="col-3">
                     <div class="small text-muted">Costo/U</div>
-                    <div class="fw-bold small">${{ "%.2f"|format(d.costo_unitario_ajustado) }}</div>
+                            <div class="fw-bold small">{{ formato_moneda(d.costo_unitario_ajustado) }}</div>
                 </div>
                 <div class="col-3">
                     <div class="small text-muted">Ganancia</div>
                     <div>
                         {% if d.ganancia_real > 0 %}
-                            <span class="text-nex-success fw-bold small">${{ "%.2f"|format(d.ganancia_real) }}</span>
+                            <span class="text-nex-success fw-bold small">{{ formato_moneda(d.ganancia_real) }}</span>
                         {% elif d.ganancia_real < 0 %}
-                            <span class="text-nex-danger fw-bold small">${{ "%.2f"|format(d.ganancia_real) }}</span>
+                            <span class="text-nex-danger fw-bold small">{{ formato_moneda(d.ganancia_real) }}</span>
                         {% else %}
-                            <span class="text-muted small">$0.00</span>
+                            <span class="text-muted small">{{ formato_moneda(0) }}</span>
                         {% endif %}
                     </div>
                 </div>

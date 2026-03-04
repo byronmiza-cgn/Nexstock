@@ -42,7 +42,7 @@
                 <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required value="{{ editando.cantidad if editando else '' }}">
             </div>
             <div class="mb-3">
-                <label for="precio_unidad" class="form-label">Precio por unidad ($)</label>
+                <label for="precio_unidad" class="form-label">Precio por unidad ({{ currency_symbol }})</label>
                 <input type="number" class="form-control" id="precio_unidad" name="precio_unidad" step="0.01" min="0" required value="{{ '%.2f'|format(editando.precio_unidad) if editando else '' }}">
                 <div id="precio-sugerido" class="form-text d-none"></div>
             </div>
@@ -88,6 +88,7 @@
 var costoActual = 0;
 var precioMin = 0;
 var stockDisponible = 0;
+var currencySymbol = '{{ currency_symbol }}';
 
 {% if editando %}
 (function() {
@@ -97,9 +98,9 @@ var stockDisponible = 0;
             costoActual = data.costo_unitario_ajustado;
             precioMin = data.precio_minimo_recomendado;
             stockDisponible = data.stock + {{ editando.cantidad }};
-            document.getElementById('info-costo').textContent = '$' + costoActual.toFixed(2);
+            document.getElementById('info-costo').textContent = currencySymbol + costoActual.toFixed(2);
             document.getElementById('info-stock').textContent = stockDisponible;
-            document.getElementById('info-precio-min').textContent = '$' + precioMin.toFixed(2);
+            document.getElementById('info-precio-min').textContent = currencySymbol + precioMin.toFixed(2);
             actualizarPreview();
         });
 })();
@@ -123,14 +124,14 @@ if (especieSelect) {
                 costoActual = data.costo_unitario_ajustado;
                 precioMin = data.precio_minimo_recomendado;
                 stockDisponible = data.stock;
-                document.getElementById('info-costo').textContent = '$' + costoActual.toFixed(2);
+                document.getElementById('info-costo').textContent = currencySymbol + costoActual.toFixed(2);
                 document.getElementById('info-stock').textContent = stockDisponible;
-                document.getElementById('info-precio-min').textContent = '$' + precioMin.toFixed(2);
+                document.getElementById('info-precio-min').textContent = currencySymbol + precioMin.toFixed(2);
                 infoPanel.classList.remove('d-none');
 
                 var sugerido = document.getElementById('precio-sugerido');
                 if (costoActual > 0) {
-                    sugerido.textContent = 'Precio minimo recomendado (20% margen): $' + precioMin.toFixed(2);
+                    sugerido.textContent = 'Precio minimo recomendado (20% margen): ' + currencySymbol + precioMin.toFixed(2);
                     sugerido.classList.remove('d-none');
                 } else {
                     sugerido.classList.add('d-none');
@@ -154,13 +155,13 @@ function actualizarPreview() {
         var margenPct = ((precio - costoActual) / costoActual) * 100;
         var ganancia = margenU * cantidad;
 
-        document.getElementById('preview-margen-u').textContent = '$' + margenU.toFixed(2);
+    document.getElementById('preview-margen-u').textContent = currencySymbol + margenU.toFixed(2);
         document.getElementById('preview-margen-u').className = 'fw-bold ' + (margenU >= 0 ? 'text-success' : 'text-danger');
 
         document.getElementById('preview-margen-pct').textContent = margenPct.toFixed(1) + '%';
         document.getElementById('preview-margen-pct').className = 'fw-bold ' + (margenPct >= 0 ? 'text-success' : 'text-danger');
 
-        document.getElementById('preview-ganancia').textContent = '$' + ganancia.toFixed(2);
+    document.getElementById('preview-ganancia').textContent = currencySymbol + ganancia.toFixed(2);
         document.getElementById('preview-ganancia').className = 'fw-bold ' + (ganancia >= 0 ? 'text-success' : 'text-danger');
 
         preview.classList.remove('d-none');

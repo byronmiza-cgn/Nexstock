@@ -18,6 +18,7 @@ class Usuario(db.Model):
     nombre_tienda = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), nullable=False, unique=True)
     password_hash = db.Column(db.String(256), nullable=False)
+    currency = db.Column(db.String(3), nullable=False, default='GTQ')
     creado = db.Column(db.DateTime, default=datetime.utcnow)
     especies = db.relationship('Especie', backref='usuario', lazy=True)
 
@@ -271,6 +272,7 @@ def registro():
         email = request.form['email'].strip().lower()
         password = request.form['password']
         password2 = request.form['password2']
+        currency = request.form.get('currency', 'GTQ')
         if not nombre_tienda or not email or not password:
             flash('Todos los campos son obligatorios.', 'danger')
             return redirect(url_for('registro'))
@@ -286,10 +288,12 @@ def registro():
             return redirect(url_for('registro'))
         usuario = Usuario(nombre_tienda=nombre_tienda, email=email)
         usuario.set_password(password)
+        usuario.currency = currency if currency in ('GTQ', 'USD') else 'GTQ'
         db.session.add(usuario)
         db.session.commit()
         session['usuario_id'] = usuario.id
         session['nombre_tienda'] = usuario.nombre_tienda
+        session['currency'] = usuario.currency
         flash(f'Bienvenido, {nombre_tienda}!', 'success')
         return redirect(url_for('dashboard'))
     return render_template('registro.html')
@@ -306,6 +310,7 @@ def login():
         if usuario and usuario.check_password(password):
             session['usuario_id'] = usuario.id
             session['nombre_tienda'] = usuario.nombre_tienda
+            session['currency'] = usuario.currency
             flash(f'Bienvenido, {usuario.nombre_tienda}!', 'success')
             return redirect(url_for('dashboard'))
         flash('Email o contrasena incorrectos.', 'danger')
@@ -714,8 +719,28 @@ def migrate_add_costo_momento():
             db.session.commit()
 
 
+def migrate_add_usuario_currency():
+    from sqlalchemy import inspect, text
+    inspector = inspect(db.engine)
+    if 'usuario' in inspector.get_table_names():
+        cols = [c['name'] for c in inspector.get_columns('usuario')]
+        if 'currency' not in cols:
+            # SQLite accepts adding a column with a default
+            try:
+                db.session.execute(text("ALTER TABLE usuario ADD COLUMN currency VARCHAR(3) DEFAULT 'GTQ' NOT NULL"))
+                db.session.commit()
+            except Exception:
+                # Fallback: try without NOT NULL/default (older sqlite)
+                try:
+                    db.session.execute(text("ALTER TABLE usuario ADD COLUMN currency VARCHAR(3)"))
+                    db.session.commit()
+                except Exception:
+                    pass
+
+
 with app.app_context():
     migrate_add_costo_momento()
+    migrate_add_usuario_currency()
     db.create_all()
 
     def calcular_costo_historico(especie, hasta_fecha):
@@ -745,6 +770,43 @@ with app.app_context():
         print(f'Backfill: {len(ventas_null)} ventas, {len(muertes_null)} muertes actualizadas')
     else:
         print('Backfill: no hay registros pendientes')
+@app.context_processor
+def utility_processor():
+    def formato_moneda(valor):
+        # Usa la moneda guardada en sesión si existe: 'GTQ' (Quetzal) o 'USD' (Dólar)
+        moneda = session.get('currency', 'GTQ')
+        try:
+            cantidad = float(valor)
+        except (TypeError, ValueError):
+            cantidad = 0.0
+        if moneda == 'USD':
+            simbolo = '$'
+        else:
+            simbolo = 'Q'
+        return f"{simbolo} {cantidad:,.2f}"
+    def currency_symbol():
+        return '$' if session.get('currency', 'GTQ') == 'USD' else 'Q'
+
+    return dict(formato_moneda=formato_moneda, currency_symbol=currency_symbol())
+
+
+@app.route('/set_currency', methods=['POST'])
+def set_currency():
+    """Guarda la preferencia de moneda en la sesión y vuelve a la página anterior."""
+    moneda = request.form.get('currency')
+    if moneda in ('GTQ', 'USD'):
+        session['currency'] = moneda
+        # Si el usuario está logueado, persiste la preferencia en la BD
+        if 'usuario_id' in session:
+            try:
+                usuario = Usuario.query.get(session['usuario_id'])
+                if usuario:
+                    usuario.currency = moneda
+                    db.session.commit()
+            except Exception:
+                db.session.rollback()
+    # redirigir a la página anterior si existe, sino al dashboard
+    return redirect(request.referrer or url_for('dashboard'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
