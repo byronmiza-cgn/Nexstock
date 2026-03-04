@@ -1,0 +1,88 @@
+Quiero convertir la app en un asistente financiero completo, manteniendo el diseño simple y mobile-first.
+
+Necesito agregar los siguientes cálculos y estructura en el dashboard:
+
+⸻
+
+1️⃣ Balance Financiero por Período
+
+Debe funcionar con filtro:
+Hoy / Semana / Mes / Personalizado
+
+Calcular:
+	•	Total Invertido
+= suma del costo total de los lotes ingresados en el período seleccionado
+	•	Total Recuperado
+= suma de ingresos por ventas en el período seleccionado
+	•	Costo de lo Vendido
+= costo promedio × cantidad vendida (por especie)
+	•	Costo de Muertes
+= costo promedio × cantidad muerta (por especie)
+	•	Ganancia Neta Real
+= ingresos_por_ventas - costo_de_lo_vendido - costo_de_muertes
+
+⸻
+
+2️⃣ Valor del Inventario Actual (Activo)
+
+Debe calcularse siempre independientemente del filtro de fechas:
+
+valor_inventario_actual = stock_actual × costo_promedio_actual
+
+Este número representa el valor financiero del inventario vivo restante.
+
+⸻
+
+3️⃣ Sección Superior del Dashboard
+
+Crear una sección llamada:
+
+💰 Resumen Financiero
+
+Mostrar en tarjetas (mobile-first):
+	•	Invertido
+	•	Recuperado
+	•	Ganancia Neta
+	•	Valor Inventario Actual
+
+Si Ganancia Neta < 0:
+Mostrar debajo una tarjeta de sugerencia automática con máximo 2 posibles causas:
+	•	Alta mortalidad (>25%)
+	•	Ventas registradas por debajo del costo
+	•	Margen promedio menor al 10%
+
+Mostrar mensajes claros y cortos.
+
+Si no hay problemas:
+Mostrar:
+“Negocio saludable en este período.”
+
+⸻
+
+4️⃣ Especies
+
+Además del margen %, agregar:
+
+Ganancia real en dinero por especie:
+ingresos - costo vendido - costo muertos
+
+Esto debe mostrarse en el detalle de cada especie.
+
+⸻
+
+5️⃣ Reglas Importantes
+	•	No agregar tablas largas.
+	•	Mantener todo mobile-first.
+	•	No agregar notificaciones push.
+	•	Mantener la interfaz simple.
+	•	Máximo 2 alertas visibles a la vez.
+	•	Si no hay alertas, mostrar estado saludable.
+
+⸻
+
+El objetivo es que en 5 segundos el dueño entienda:
+	•	Si está ganando o perdiendo dinero
+	•	Cuánto tiene invertido
+	•	Cuánto ha recuperado
+	•	Cuánto vale su inventario vivo
+	•	Si existe algún problema financiero que requiere atención
