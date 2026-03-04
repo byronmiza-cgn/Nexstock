@@ -1,38 +1,60 @@
 {% extends "base.html" %}
-{% block title %}{% if editando %}Editar Muerte{% else %}Registrar Muerte{% endif %}{% endblock %}
+{% block title %}{% if editando %}Editar Pérdida{% else %}Registrar Pérdida{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="bi bi-{% if editando %}pencil{% else %}plus-circle{% endif %}"></i> {% if editando %}Editar Muerte{% else %}Registrar Muerte{% endif %}</h2>
-<div class="card">
-    <div class="card-body">
-        {% if frecuentes or resto %}
-        <form method="POST" action="{% if editando %}{{ url_for('editar_muerte', id=editando.id) }}{% endif %}">
-            {% if editando %}
-            <div class="mb-3">
-                <label class="form-label">Especie</label>
-                <input type="text" class="form-control" value="{{ editando.especie.nombre }}" disabled>
-                <input type="hidden" name="especie_id" value="{{ editando.especie_id }}">
-            </div>
+
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="bi bi-{% if editando %}pencil{% else %}clipboard-x{% endif %}"></i>
+        {% if editando %}Editar Pérdida{% else %}Registrar Pérdida{% endif %}
+    </h1>
+    <a href="/muertes" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="form-card">
+    <div class="card">
+        <div class="card-body">
+            {% if frecuentes or resto %}
+            <form method="POST" action="{% if editando %}{{ url_for('editar_muerte', id=editando.id) }}{% endif %}">
+                {% if editando %}
+                <div class="mb-3">
+                    <label class="form-label">Especie</label>
+                    <input type="text" class="form-control" value="{{ editando.especie.nombre }}" disabled style="background:#FAFAFA;">
+                    <input type="hidden" name="especie_id" value="{{ editando.especie_id }}">
+                </div>
+                {% else %}
+                {% include '_especies_dropdown.html' %}
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="cantidad" class="form-label">Cantidad</label>
+                    <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required
+                        value="{{ editando.cantidad if editando else '' }}" placeholder="Ej: 3">
+                    <div class="form-text">Esta cantidad se descontará del stock y ajustará el costo promedio</div>
+                </div>
+                <div class="mb-3">
+                    <label for="fecha" class="form-label">Fecha</label>
+                    <input type="date" class="form-control" id="fecha" name="fecha"
+                        value="{{ editando.fecha.isoformat() if editando else hoy }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="nota" class="form-label">Nota <span style="color:#9CA3AF;font-weight:400;">(opcional)</span></label>
+                    <textarea class="form-control" id="nota" name="nota" rows="2"
+                        placeholder="Ej: Problema con el pH, temperatura del agua...">{{ editando.nota if editando and editando.nota else '' }}</textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-check-lg"></i> {% if editando %}Guardar Cambios{% else %}Registrar Pérdida{% endif %}
+                    </button>
+                    <a href="/muertes" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
             {% else %}
-            {% include '_especies_dropdown.html' %}
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Primero debes <a href="/especies/nueva">registrar al menos una especie</a>.
+            </div>
             {% endif %}
-            <div class="mb-3">
-                <label for="cantidad" class="form-label">Cantidad</label>
-                <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required value="{{ editando.cantidad if editando else '' }}">
-            </div>
-            <div class="mb-3">
-                <label for="fecha" class="form-label">Fecha</label>
-                <input type="date" class="form-control" id="fecha" name="fecha" value="{{ editando.fecha.isoformat() if editando else hoy }}" required>
-            </div>
-            <div class="mb-3">
-                <label for="nota" class="form-label">Nota (opcional)</label>
-                <textarea class="form-control" id="nota" name="nota" rows="2" placeholder="Ej: Problema con el pH del agua">{{ editando.nota if editando and editando.nota else '' }}</textarea>
-            </div>
-            <button type="submit" class="btn btn-danger"><i class="bi bi-check-lg"></i> {% if editando %}Guardar Cambios{% else %}Registrar Muerte{% endif %}</button>
-            <a href="/muertes" class="btn btn-outline-secondary ms-2">Cancelar</a>
-        </form>
-        {% else %}
-        <div class="alert alert-warning">Primero debes <a href="/especies/nueva">registrar al menos una especie</a>.</div>
-        {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}
