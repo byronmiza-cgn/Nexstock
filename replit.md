@@ -1,19 +1,22 @@
 # AquaStock - Control de Inventario para Acuarios
 
 ## Overview
-Aplicación web para tiendas de acuarios que permite controlar el inventario de animales vivos (peces, corales, invertebrados, plantas).
+Aplicación web multi-tienda para acuarios que permite controlar el inventario de animales vivos (peces, corales, invertebrados, plantas). Cada tienda tiene su propia cuenta con datos aislados.
 
 ## Tech Stack
 - **Backend**: Python 3.11 + Flask
 - **Database**: SQLite (via Flask-SQLAlchemy)
 - **Frontend**: HTML + Bootstrap 5 + Bootstrap Icons
 - **ORM**: SQLAlchemy
+- **Auth**: Session-based with werkzeug password hashing
 
 ## Project Structure
 ```
-app.py              - Main application (models, routes, logic)
+app.py              - Main application (models, routes, auth, logic)
 templates/
-  base.html         - Base template with navbar and layout
+  base.html         - Base template with navbar and auth-aware layout
+  login.html        - Login form
+  registro.html     - Registration form
   dashboard.html    - Main dashboard with stats per species
   especies.html     - Species list
   nueva_especie.html - New species form
@@ -28,14 +31,22 @@ static/
 ```
 
 ## Features
-- Register species (name, category, description)
+- Multi-tenant: each store registers and sees only their own data
+- User registration and login with password hashing
+- Register species (name, category, description) per store
 - Register entry lots (species, quantity, total cost, date)
-- Register sales (species, quantity, unit price, date)
-- Register deaths (species, quantity, date, optional note)
+- Register sales (species, quantity, unit price, date) with stock validation
+- Register deaths (species, quantity, date, optional note) with stock validation
 - Dashboard with automatic calculations:
   - Current stock per species (entries - sales - deaths)
-  - Mortality percentage per species
-  - Adjusted margin considering losses
+  - Mortality percentage per species (deaths / total entered)
+  - Adjusted margin considering mortality losses
+
+## Key Business Logic
+- Stock = total entered - total sold - total dead (never goes negative due to validation)
+- Mortality % = (total dead / total entered) * 100
+- Adjusted margin = (sales revenue - cost of sold units - cost of dead units) / cost of sold units * 100
+- All data queries are filtered by the logged-in user's ID
 
 ## Running
 The app runs on port 5000 with `python app.py`. Database is auto-created on first run.
