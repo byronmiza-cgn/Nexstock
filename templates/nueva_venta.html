@@ -1,93 +1,107 @@
 {% extends "base.html" %}
-{% block title %}{% if editando %}Editar Venta{% else %}Nueva Venta{% endif %}{% endblock %}
+{% block title %}{% if editando %}Editar Venta{% else %}Nueva Venta{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="bi bi-{% if editando %}pencil{% else %}plus-circle{% endif %}"></i> {% if editando %}Editar Venta{% else %}Registrar Venta{% endif %}</h2>
-<div class="card">
-    <div class="card-body">
-        {% if frecuentes or resto %}
-        <form method="POST" action="{% if editando %}{{ url_for('editar_venta', id=editando.id) }}{% endif %}">
-            {% if editando %}
-            <div class="mb-3">
-                <label class="form-label">Especie</label>
-                <input type="text" class="form-control" value="{{ editando.especie.nombre }}" disabled>
-                <input type="hidden" name="especie_id" value="{{ editando.especie_id }}">
-            </div>
+
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="bi bi-{% if editando %}pencil{% else %}cart-check{% endif %}"></i>
+        {% if editando %}Editar Venta{% else %}Registrar Venta{% endif %}
+    </h1>
+    <a href="/ventas" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="form-card">
+    <div class="card">
+        <div class="card-body">
+            {% if frecuentes or resto %}
+            <form method="POST" action="{% if editando %}{{ url_for('editar_venta', id=editando.id) }}{% endif %}">
+                {% if editando %}
+                <div class="mb-3">
+                    <label class="form-label">Especie</label>
+                    <input type="text" class="form-control" value="{{ editando.especie.nombre }}" disabled style="background:#FAFAFA;">
+                    <input type="hidden" name="especie_id" value="{{ editando.especie_id }}">
+                </div>
+                {% else %}
+                {% include '_especies_dropdown.html' %}
+                {% endif %}
+
+                <!-- Info panel (shows after species selected) -->
+                <div id="sale-info" class="{% if not editando %}d-none{% endif %} info-panel mb-3">
+                    <div class="row g-2 text-center">
+                        <div class="col-4 info-item">
+                            <div class="info-label">Costo promedio</div>
+                            <div class="info-value" id="info-costo">—</div>
+                        </div>
+                        <div class="col-4 info-item">
+                            <div class="info-label">Stock disponible</div>
+                            <div class="info-value" id="info-stock">—</div>
+                        </div>
+                        <div class="col-4 info-item">
+                            <div class="info-label">Precio mín. +20%</div>
+                            <div class="info-value text-nex-success" id="info-precio-min">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="cantidad" class="form-label">Cantidad vendida</label>
+                    <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required
+                        value="{{ editando.cantidad if editando else '' }}" placeholder="Ej: 10">
+                </div>
+                <div class="mb-3">
+                    <label for="precio_unidad" class="form-label">Precio por unidad ({{ currency_symbol }})</label>
+                    <input type="number" class="form-control" id="precio_unidad" name="precio_unidad"
+                        step="0.01" min="0" required
+                        value="{{ '%.2f'|format(editando.precio_unidad) if editando else '' }}"
+                        placeholder="Ej: 15.00">
+                    <div id="precio-sugerido" class="form-text d-none"></div>
+                </div>
+
+                <!-- Preview panel -->
+                <div id="venta-preview" class="d-none preview-panel mb-3">
+                    <div id="alerta-bajo-costo" class="alert alert-danger d-none mb-2" style="padding:0.6rem 0.85rem;">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Precio por debajo del costo.
+                    </div>
+                    <div class="row g-2 text-center">
+                        <div class="col-4 info-item">
+                            <div class="info-label" style="font-size:0.65rem;color:#6B7280;">Margen / ud.</div>
+                            <div id="preview-margen-u" class="fw-bold" style="font-family:'DM Mono',monospace;font-size:0.95rem;">—</div>
+                        </div>
+                        <div class="col-4 info-item">
+                            <div class="info-label" style="font-size:0.65rem;color:#6B7280;">Margen %</div>
+                            <div id="preview-margen-pct" class="fw-bold" style="font-family:'DM Mono',monospace;font-size:0.95rem;">—</div>
+                        </div>
+                        <div class="col-4 info-item">
+                            <div class="info-label" style="font-size:0.65rem;color:#6B7280;">Ganancia total</div>
+                            <div id="preview-ganancia" class="fw-bold" style="font-family:'DM Mono',monospace;font-size:0.95rem;">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="fecha" class="form-label">Fecha de venta</label>
+                    <input type="date" class="form-control" id="fecha" name="fecha"
+                        value="{{ editando.fecha.isoformat() if editando else hoy }}" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-lg"></i> {% if editando %}Guardar Cambios{% else %}Registrar Venta{% endif %}
+                    </button>
+                    <a href="/ventas" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
             {% else %}
-            {% include '_especies_dropdown.html' %}
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Primero debes <a href="/especies/nueva">registrar al menos una especie</a>.
+            </div>
             {% endif %}
-
-            <div id="sale-info" class="{% if editando %}{% else %}d-none{% endif %} mb-3">
-                <div class="card bg-light">
-                    <div class="card-body py-2">
-                        <div class="row text-center">
-                            <div class="col-4">
-                                <div class="small text-muted">Costo promedio</div>
-                                <div class="fw-bold" id="info-costo">-</div>
-                            </div>
-                            <div class="col-4">
-                                <div class="small text-muted">Stock disponible</div>
-                                <div class="fw-bold" id="info-stock">-</div>
-                            </div>
-                            <div class="col-4">
-                                <div class="small text-muted">Precio min. (20%)</div>
-                                <div class="fw-bold text-primary" id="info-precio-min">-</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label for="cantidad" class="form-label">Cantidad vendida</label>
-                <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required value="{{ editando.cantidad if editando else '' }}">
-            </div>
-            <div class="mb-3">
-                <label for="precio_unidad" class="form-label">Precio por unidad ({{ currency_symbol }})</label>
-                <input type="number" class="form-control" id="precio_unidad" name="precio_unidad" step="0.01" min="0" required value="{{ '%.2f'|format(editando.precio_unidad) if editando else '' }}">
-                <div id="precio-sugerido" class="form-text d-none"></div>
-            </div>
-
-            <div id="venta-preview" class="d-none mb-3">
-                <div id="alerta-bajo-costo" class="alert alert-danger d-none">
-                    <i class="bi bi-exclamation-triangle-fill"></i> Estas vendiendo por debajo del costo.
-                </div>
-                <div class="card bg-light">
-                    <div class="card-body py-2">
-                        <div class="row text-center">
-                            <div class="col-4">
-                                <div class="small text-muted">Margen/unidad</div>
-                                <div class="fw-bold" id="preview-margen-u">-</div>
-                            </div>
-                            <div class="col-4">
-                                <div class="small text-muted">Margen %</div>
-                                <div class="fw-bold" id="preview-margen-pct">-</div>
-                            </div>
-                            <div class="col-4">
-                                <div class="small text-muted">Ganancia total</div>
-                                <div class="fw-bold" id="preview-ganancia">-</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label for="fecha" class="form-label">Fecha de venta</label>
-                <input type="date" class="form-control" id="fecha" name="fecha" value="{{ editando.fecha.isoformat() if editando else hoy }}" required>
-            </div>
-            <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> {% if editando %}Guardar Cambios{% else %}Registrar Venta{% endif %}</button>
-            <a href="/ventas" class="btn btn-outline-secondary ms-2">Cancelar</a>
-        </form>
-        {% else %}
-        <div class="alert alert-warning">Primero debes <a href="/especies/nueva">registrar al menos una especie</a>.</div>
-        {% endif %}
+        </div>
     </div>
 </div>
 
 <script>
-var costoActual = 0;
-var precioMin = 0;
-var stockDisponible = 0;
+var costoActual = 0, precioMin = 0, stockDisponible = 0;
 var currencySymbol = '{{ currency_symbol }}';
 
 {% if editando %}
@@ -106,40 +120,29 @@ var currencySymbol = '{{ currency_symbol }}';
 })();
 {% endif %}
 
-var especieSelect = document.getElementById('especie_id');
-if (especieSelect) {
-    especieSelect.addEventListener('change', function() {
-        var id = this.value;
-        var infoPanel = document.getElementById('sale-info');
-        if (!id) {
-            infoPanel.classList.add('d-none');
-            costoActual = 0;
-            precioMin = 0;
+// Listens to the searchable combo-box selection
+document.addEventListener('especie-selected', function(e) {
+    var id = e.detail.id;
+    var infoPanel = document.getElementById('sale-info');
+    if (!id) { infoPanel.classList.add('d-none'); costoActual = 0; precioMin = 0; actualizarPreview(); return; }
+    fetch('/api/especie/' + id + '/stats')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            costoActual = data.costo_unitario_ajustado;
+            precioMin = data.precio_minimo_recomendado;
+            stockDisponible = data.stock;
+            document.getElementById('info-costo').textContent = currencySymbol + costoActual.toFixed(2);
+            document.getElementById('info-stock').textContent = stockDisponible;
+            document.getElementById('info-precio-min').textContent = currencySymbol + precioMin.toFixed(2);
+            infoPanel.classList.remove('d-none');
+            var sugerido = document.getElementById('precio-sugerido');
+            if (costoActual > 0) {
+                sugerido.textContent = 'Precio mínimo recomendado: ' + currencySymbol + precioMin.toFixed(2);
+                sugerido.classList.remove('d-none');
+            } else { sugerido.classList.add('d-none'); }
             actualizarPreview();
-            return;
-        }
-        fetch('/api/especie/' + id + '/stats')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                costoActual = data.costo_unitario_ajustado;
-                precioMin = data.precio_minimo_recomendado;
-                stockDisponible = data.stock;
-                document.getElementById('info-costo').textContent = currencySymbol + costoActual.toFixed(2);
-                document.getElementById('info-stock').textContent = stockDisponible;
-                document.getElementById('info-precio-min').textContent = currencySymbol + precioMin.toFixed(2);
-                infoPanel.classList.remove('d-none');
-
-                var sugerido = document.getElementById('precio-sugerido');
-                if (costoActual > 0) {
-                    sugerido.textContent = 'Precio minimo recomendado (20% margen): ' + currencySymbol + precioMin.toFixed(2);
-                    sugerido.classList.remove('d-none');
-                } else {
-                    sugerido.classList.add('d-none');
-                }
-                actualizarPreview();
-            });
-    });
-}
+        });
+});
 
 document.getElementById('cantidad').addEventListener('input', actualizarPreview);
 document.getElementById('precio_unidad').addEventListener('input', actualizarPreview);
@@ -149,32 +152,19 @@ function actualizarPreview() {
     var precio = parseFloat(document.getElementById('precio_unidad').value) || 0;
     var preview = document.getElementById('venta-preview');
     var alerta = document.getElementById('alerta-bajo-costo');
-
     if (cantidad > 0 && precio > 0 && costoActual > 0) {
         var margenU = precio - costoActual;
         var margenPct = ((precio - costoActual) / costoActual) * 100;
         var ganancia = margenU * cantidad;
-
-    document.getElementById('preview-margen-u').textContent = currencySymbol + margenU.toFixed(2);
-        document.getElementById('preview-margen-u').className = 'fw-bold ' + (margenU >= 0 ? 'text-success' : 'text-danger');
-
+        document.getElementById('preview-margen-u').textContent = currencySymbol + margenU.toFixed(2);
+        document.getElementById('preview-margen-u').style.color = margenU >= 0 ? 'var(--nex-success)' : 'var(--nex-danger)';
         document.getElementById('preview-margen-pct').textContent = margenPct.toFixed(1) + '%';
-        document.getElementById('preview-margen-pct').className = 'fw-bold ' + (margenPct >= 0 ? 'text-success' : 'text-danger');
-
-    document.getElementById('preview-ganancia').textContent = currencySymbol + ganancia.toFixed(2);
-        document.getElementById('preview-ganancia').className = 'fw-bold ' + (ganancia >= 0 ? 'text-success' : 'text-danger');
-
+        document.getElementById('preview-margen-pct').style.color = margenPct >= 0 ? 'var(--nex-success)' : 'var(--nex-danger)';
+        document.getElementById('preview-ganancia').textContent = currencySymbol + ganancia.toFixed(2);
+        document.getElementById('preview-ganancia').style.color = ganancia >= 0 ? 'var(--nex-success)' : 'var(--nex-danger)';
         preview.classList.remove('d-none');
-
-        if (precio < costoActual) {
-            alerta.classList.remove('d-none');
-        } else {
-            alerta.classList.add('d-none');
-        }
-    } else {
-        preview.classList.add('d-none');
-        alerta.classList.add('d-none');
-    }
+        precio < costoActual ? alerta.classList.remove('d-none') : alerta.classList.add('d-none');
+    } else { preview.classList.add('d-none'); alerta.classList.add('d-none'); }
 }
 </script>
 {% endblock %}
