@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Nuevo Lote{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-plus-circle"></i> Registrar Lote de Entrada</h2>
+<div class="card">
+    <div class="card-body">
+        {% if especies %}
+        <form method="POST">
+            <div class="mb-3">
+                <label for="especie_id" class="form-label">Especie</label>
+                <select class="form-select" id="especie_id" name="especie_id" required>
+                    <option value="">Seleccionar especie...</option>
+                    {% for e in especies %}
+                    <option value="{{ e.id }}">{{ e.nombre }} ({{ e.categoria }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="cantidad" class="form-label">Cantidad ingresada</label>
+                <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required>
+            </div>
+            <div class="mb-3">
+                <label for="costo_total" class="form-label">Costo total del lote ($)</label>
+                <input type="number" class="form-control" id="costo_total" name="costo_total" step="0.01" min="0" required>
+            </div>
+            <div class="mb-3">
+                <label for="fecha" class="form-label">Fecha de ingreso</label>
+                <input type="date" class="form-control" id="fecha" name="fecha" value="{{ hoy }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Registrar Lote</button>
+            <a href="/lotes" class="btn btn-outline-secondary ms-2">Cancelar</a>
+        </form>
+        {% else %}
+        <div class="alert alert-warning">Primero debes <a href="/especies/nueva">registrar al menos una especie</a>.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

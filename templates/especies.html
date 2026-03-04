@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Especies{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-fish"></i> Especies</h2>
+    <a href="/especies/nueva" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Nueva Especie</a>
+</div>
+
+{% if especies %}
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Nombre</th>
+                        <th>Categor&iacute;a</th>
+                        <th>Descripci&oacute;n</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in especies %}
+                    <tr>
+                        <td>{{ e.id }}</td>
+                        <td><strong>{{ e.nombre }}</strong></td>
+                        <td><span class="badge bg-secondary">{{ e.categoria }}</span></td>
+                        <td>{{ e.descripcion or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">No hay especies registradas. <a href="/especies/nueva">Registra la primera.</a></div>
+{% endif %}
+{% endblock %}

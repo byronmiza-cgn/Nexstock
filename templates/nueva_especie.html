@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Nueva Especie{% endblock %}
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-plus-circle"></i> Registrar Especie</h2>
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="mb-3">
+                <label for="nombre" class="form-label">Nombre de la especie</label>
+                <input type="text" class="form-control" id="nombre" name="nombre" required placeholder="Ej: Betta, Guppy, Coral X">
+            </div>
+            <div class="mb-3">
+                <label for="categoria" class="form-label">Categor&iacute;a</label>
+                <select class="form-select" id="categoria" name="categoria" required>
+                    <option value="Pez">Pez</option>
+                    <option value="Coral">Coral</option>
+                    <option value="Invertebrado">Invertebrado</option>
+                    <option value="Planta">Planta</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="descripcion" class="form-label">Descripci&oacute;n (opcional)</label>
+                <textarea class="form-control" id="descripcion" name="descripcion" rows="2" placeholder="Notas sobre la especie"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Registrar</button>
+            <a href="/especies" class="btn btn-outline-secondary ms-2">Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

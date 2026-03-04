@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Muertes{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-heartbreak"></i> Registro de Muertes</h2>
+    <a href="/muertes/nueva" class="btn btn-danger"><i class="bi bi-plus-circle"></i> Registrar Muerte</a>
+</div>
+
+{% if muertes %}
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Especie</th>
+                        <th class="text-center">Cantidad</th>
+                        <th>Fecha</th>
+                        <th>Nota</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in muertes %}
+                    <tr>
+                        <td>{{ m.id }}</td>
+                        <td><strong>{{ m.especie.nombre }}</strong></td>
+                        <td class="text-center">{{ m.cantidad }}</td>
+                        <td>{{ m.fecha.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ m.nota or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">No hay muertes registradas.</div>
+{% endif %}
+{% endblock %}

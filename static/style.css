@@ -1,0 +1,68 @@
+body {
+    background-color: #f0f6fa;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.4rem;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 10px;
+}
+
+.card-header {
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.stat-card {
+    text-align: center;
+    padding: 1.2rem;
+}
+
+.stat-card .stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+.stat-card .stat-label {
+    font-size: 0.85rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #495057;
+}
+
+.badge-stock-ok {
+    background-color: #28a745;
+}
+
+.badge-stock-low {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-stock-zero {
+    background-color: #dc3545;
+}
+
+.badge-mortality-low {
+    background-color: #28a745;
+}
+
+.badge-mortality-med {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-mortality-high {
+    background-color: #dc3545;
+}
