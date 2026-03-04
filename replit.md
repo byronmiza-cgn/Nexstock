@@ -50,20 +50,43 @@ static/
 - Mobile-first design: card layout on mobile, table on desktop
 
 ## Key Business Logic
-- Stock = total entered - total sold - total dead (never negative)
+
+### Immutable Historical Costs
+- `costo_unitario_momento` is stored on every Venta and Muerte at registration time
+- This captures the adjusted cost/unit at the exact moment of the transaction
+- All historical financial calculations (ganancia, margen, balance) use this stored value
+- New lotes do NOT change historical profits — only future transactions reflect updated costs
+- On app startup, a backfill runs for any NULL records (migration safety net)
+- Fallback to current cost exists only as temporary protection; after backfill no NULLs remain
+
+### Formulas
+- Stock = total entered - total sold - total dead
 - Mortality % = (total dead / total entered) * 100
-- Adjusted cost/unit = total cost / (total entered - total dead)
+- Adjusted cost/unit (current) = total cost / (total entered - total dead)
 - Min recommended price = adjusted cost * 1.20
-- Adjusted margin = (sales revenue - (adjusted cost * sold)) / (adjusted cost * sold) * 100
-- **Ganancia real per species** = ingreso_ventas - (costo_unitario_ajustado * total_vendido) - (costo_unitario_ajustado * total_muerto)
-- **Balance periodo:**
-  - Total Invertido = sum of lote.costo_total in date range
-  - Total Recuperado = sum of venta revenue in date range
-  - Costo Vendido = sum of (costo_unitario_ajustado * cantidad vendida) per species in range
-  - Costo Muertes = sum of (costo_unitario_ajustado * cantidad muerta) per species in range
-  - Ganancia Neta = Recuperado - Costo Vendido - Costo Muertes
-- **Valor Inventario** = sum of (stock * costo_unitario_ajustado) per species (always calculated, no period filter)
-- **Smart alerts (max 2):** mortality >25%, negative margin sales, average margin <10%
+- Costo de vendidos = sum of (venta.cantidad * venta.costo_unitario_momento) per venta
+- Costo de muertos = sum of (muerte.cantidad * muerte.costo_unitario_momento) per muerte
+- Ganancia real per species = ingreso_ventas - costo_de_vendidos - costo_de_muertos
+- Adjusted margin = (ingreso_ventas - costo_de_vendidos) / costo_de_vendidos * 100
+- **Valor Inventario** = stock * costo_unitario_ajustado (uses LIVE cost, not moment cost — correct for current valuation)
+
+### Balance por Periodo
+- Total Invertido = sum of lote.costo_total in date range
+- Total Recuperado = sum of venta revenue in date range
+- Costo Vendido = sum of (venta.costo_unitario_momento * cantidad) per venta in range
+- Costo Muertes = sum of (muerte.costo_unitario_momento * cantidad) per muerte in range
+- Ganancia Neta = Recuperado - Costo Vendido - Costo Muertes
+- Balance is stable: same date range always returns same result regardless of new lotes
+
+### Smart Alerts (max 2)
+- Mortality >25%
+- Negative margin (sales below cost)
+- Average margin <10%
+
+## Database Migration
+- `migrate_add_costo_momento()` runs on startup to add columns if missing (SQLite ALTER TABLE)
+- Backfill runs after migration for any NULL costo_unitario_momento records
+- Both are idempotent and safe to run multiple times
 
 ## API Endpoints
 - GET /api/especie/<id>/stats - Returns species financial stats (JSON)

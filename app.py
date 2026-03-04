@@ -54,6 +54,7 @@ class Venta(db.Model):
     especie_id = db.Column(db.Integer, db.ForeignKey('especie.id'), nullable=False)
     cantidad = db.Column(db.Integer, nullable=False)
     precio_unidad = db.Column(db.Float, nullable=False)
+    costo_unitario_momento = db.Column(db.Float, nullable=True)
     fecha = db.Column(db.Date, nullable=False, default=date.today)
 
 
@@ -61,6 +62,7 @@ class Muerte(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     especie_id = db.Column(db.Integer, db.ForeignKey('especie.id'), nullable=False)
     cantidad = db.Column(db.Integer, nullable=False)
+    costo_unitario_momento = db.Column(db.Float, nullable=True)
     fecha = db.Column(db.Date, nullable=False, default=date.today)
     nota = db.Column(db.String(200))
 
@@ -112,14 +114,19 @@ def calcular_estadisticas(especie):
 
     precio_minimo_recomendado = round(costo_unitario_ajustado * 1.20, 2)
 
-    costo_de_vendidos = costo_unitario_ajustado * total_vendido
-    if unidades_vendibles <= 0 and total_muerto > 0:
+    costo_de_vendidos = sum(
+        v.cantidad * (v.costo_unitario_momento if v.costo_unitario_momento is not None else costo_unitario_ajustado)
+        for v in especie.ventas
+    )
+    costo_de_muertos = sum(
+        m.cantidad * (m.costo_unitario_momento if m.costo_unitario_momento is not None else costo_unitario_ajustado)
+        for m in especie.muertes
+    )
+    if unidades_vendibles <= 0 and total_muerto > 0 and costo_de_muertos == 0:
         costo_de_muertos = costo_total - costo_de_vendidos
-    else:
-        costo_de_muertos = costo_unitario_ajustado * total_muerto
     ganancia_real = ingreso_ventas - costo_de_vendidos - costo_de_muertos
 
-    if total_vendido > 0 and costo_unitario_ajustado > 0:
+    if total_vendido > 0 and costo_de_vendidos > 0:
         margen = ((ingreso_ventas - costo_de_vendidos) / costo_de_vendidos) * 100
     elif costo_total > 0 and unidades_vendibles <= 0:
         margen = -100.0
@@ -175,20 +182,24 @@ def calcular_balance_periodo(usuario_id, fecha_inicio, fecha_fin):
 
     for esp in especies:
         stats = calcular_estadisticas(esp)
-        costo_u = stats['costo_unitario_ajustado']
+        costo_u_fallback = stats['costo_unitario_ajustado']
 
         lotes_periodo = [l for l in esp.lotes if fecha_inicio <= l.fecha <= fecha_fin]
         total_invertido += sum(l.costo_total for l in lotes_periodo)
 
         ventas_periodo = [v for v in esp.ventas if fecha_inicio <= v.fecha <= fecha_fin]
-        vendido_periodo = sum(v.cantidad for v in ventas_periodo)
         ingreso_periodo = sum(v.cantidad * v.precio_unidad for v in ventas_periodo)
         total_recuperado += ingreso_periodo
-        total_costo_vendido += costo_u * vendido_periodo
+        total_costo_vendido += sum(
+            v.cantidad * (v.costo_unitario_momento if v.costo_unitario_momento is not None else costo_u_fallback)
+            for v in ventas_periodo
+        )
 
         muertes_periodo = [m for m in esp.muertes if fecha_inicio <= m.fecha <= fecha_fin]
-        muerto_periodo = sum(m.cantidad for m in muertes_periodo)
-        total_costo_muertes += costo_u * muerto_periodo
+        total_costo_muertes += sum(
+            m.cantidad * (m.costo_unitario_momento if m.costo_unitario_momento is not None else costo_u_fallback)
+            for m in muertes_periodo
+        )
 
     ganancia_neta = total_recuperado - total_costo_vendido - total_costo_muertes
 
@@ -452,7 +463,10 @@ def nueva_venta():
         if cantidad > stats['stock']:
             flash(f'Stock insuficiente. Disponible: {stats["stock"]}', 'danger')
             return redirect(url_for('nueva_venta'))
-        venta = Venta(especie_id=especie.id, cantidad=cantidad, precio_unidad=precio_unidad, fecha=fecha)
+        venta = Venta(
+            especie_id=especie.id, cantidad=cantidad, precio_unidad=precio_unidad,
+            costo_unitario_momento=stats['costo_unitario_ajustado'], fecha=fecha
+        )
         incrementar_uso(especie)
         db.session.add(venta)
         db.session.commit()
@@ -489,7 +503,10 @@ def nueva_muerte():
         if cantidad > stats['stock']:
             flash(f'No puedes registrar mas muertes que el stock disponible ({stats["stock"]}).', 'danger')
             return redirect(url_for('nueva_muerte'))
-        muerte = Muerte(especie_id=especie.id, cantidad=cantidad, fecha=fecha, nota=nota)
+        muerte = Muerte(
+            especie_id=especie.id, cantidad=cantidad,
+            costo_unitario_momento=stats['costo_unitario_ajustado'], fecha=fecha, nota=nota
+        )
         incrementar_uso(especie)
         db.session.add(muerte)
         db.session.commit()
@@ -499,8 +516,52 @@ def nueva_muerte():
     return render_template('nueva_muerte.html', frecuentes=frecuentes, resto=resto, hoy=date.today().isoformat())
 
 
+def migrate_add_costo_momento():
+    from sqlalchemy import inspect, text
+    inspector = inspect(db.engine)
+    if 'venta' in inspector.get_table_names():
+        cols = [c['name'] for c in inspector.get_columns('venta')]
+        if 'costo_unitario_momento' not in cols:
+            db.session.execute(text('ALTER TABLE venta ADD COLUMN costo_unitario_momento FLOAT'))
+            db.session.commit()
+    if 'muerte' in inspector.get_table_names():
+        cols = [c['name'] for c in inspector.get_columns('muerte')]
+        if 'costo_unitario_momento' not in cols:
+            db.session.execute(text('ALTER TABLE muerte ADD COLUMN costo_unitario_momento FLOAT'))
+            db.session.commit()
+
+
 with app.app_context():
+    migrate_add_costo_momento()
     db.create_all()
+
+    def calcular_costo_historico(especie, hasta_fecha):
+        lotes_hasta = [l for l in especie.lotes if l.fecha <= hasta_fecha]
+        muertes_hasta = [m for m in especie.muertes if m.fecha <= hasta_fecha]
+        total_ingresado = sum(l.cantidad for l in lotes_hasta)
+        costo_total = sum(l.costo_total for l in lotes_hasta)
+        total_muerto = sum(m.cantidad for m in muertes_hasta)
+        unidades_vendibles = total_ingresado - total_muerto
+        if unidades_vendibles > 0:
+            return round(costo_total / unidades_vendibles, 2)
+        elif total_ingresado > 0:
+            return round(costo_total / total_ingresado, 2)
+        return 0
+
+    ventas_null = Venta.query.filter(Venta.costo_unitario_momento.is_(None)).all()
+    muertes_null = Muerte.query.filter(Muerte.costo_unitario_momento.is_(None)).all()
+
+    if ventas_null or muertes_null:
+        for v in ventas_null:
+            v.costo_unitario_momento = calcular_costo_historico(v.especie, v.fecha)
+
+        for m in muertes_null:
+            m.costo_unitario_momento = calcular_costo_historico(m.especie, m.fecha)
+
+        db.session.commit()
+        print(f'Backfill: {len(ventas_null)} ventas, {len(muertes_null)} muertes actualizadas')
+    else:
+        print('Backfill: no hay registros pendientes')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
