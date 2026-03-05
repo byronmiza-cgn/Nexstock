@@ -1,8 +1,10 @@
 import os
 import logging
+import secrets
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date, timedelta
 
@@ -19,7 +21,16 @@ if database_url.startswith('postgres://'):
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Flask-Mail config (uses env vars set in Railway)
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
+
 db = SQLAlchemy(app)
+mail = Mail(app)
 
 
 class Usuario(db.Model):
@@ -75,6 +86,17 @@ class Muerte(db.Model):
     costo_unitario_momento = db.Column(db.Float, nullable=True)
     fecha = db.Column(db.Date, nullable=False, default=date.today)
     nota = db.Column(db.String(200))
+
+
+class PasswordResetToken(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    token = db.Column(db.String(100), nullable=False, unique=True)
+    expira = db.Column(db.DateTime, nullable=False)
+    usado = db.Column(db.Boolean, default=False)
+
+    def is_valid(self):
+        return not self.usado and datetime.utcnow() < self.expira
 
 
 def login_required(f):
@@ -332,6 +354,72 @@ def logout():
     session.clear()
     flash('Sesion cerrada.', 'info')
     return redirect(url_for('login'))
+
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email'].strip().lower()
+        usuario = Usuario.query.filter_by(email=email).first()
+        # Always show the same message to avoid user enumeration
+        if usuario:
+            token = secrets.token_urlsafe(32)
+            expira = datetime.utcnow() + timedelta(hours=1)
+            reset = PasswordResetToken(
+                usuario_id=usuario.id,
+                token=token,
+                expira=expira
+            )
+            db.session.add(reset)
+            db.session.commit()
+            reset_url = url_for('reset_password', token=token, _external=True)
+            try:
+                msg = Message(
+                    subject='Restablecer contraseña - NexStock',
+                    recipients=[email],
+                    body=f'''Hola {usuario.nombre_tienda},
+
+Recibimos una solicitud para restablecer la contraseña de tu cuenta NexStock.
+
+Haz clic en el siguiente enlace para crear una nueva contraseña (válido por 1 hora):
+
+{reset_url}
+
+Si no solicitaste esto, ignora este correo. Tu contraseña no cambiará.
+
+— El equipo de NexStock
+'''
+                )
+                mail.send(msg)
+            except Exception as e:
+                app.logger.error("Error enviando email de reset: %s", e)
+        flash('Si ese email está registrado, recibirás un enlace en tu correo.', 'info')
+        return redirect(url_for('login'))
+    return render_template('forgot_password.html')
+
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    reset = PasswordResetToken.query.filter_by(token=token).first()
+    if not reset or not reset.is_valid():
+        flash('El enlace no es válido o ya expiró. Solicita uno nuevo.', 'danger')
+        return redirect(url_for('forgot_password'))
+    if request.method == 'POST':
+        password = request.form['password']
+        password2 = request.form['password2']
+        if len(password) < 6:
+            flash('La contraseña debe tener al menos 6 caracteres.', 'danger')
+            return redirect(url_for('reset_password', token=token))
+        if password != password2:
+            flash('Las contraseñas no coinciden.', 'danger')
+            return redirect(url_for('reset_password', token=token))
+        usuario = Usuario.query.get(reset.usuario_id)
+        usuario.set_password(password)
+        reset.usado = True
+        db.session.commit()
+        flash('¡Contraseña actualizada! Ya puedes iniciar sesión.', 'success')
+        return redirect(url_for('login'))
+    return render_template('reset_password.html', token=token)
 
 
 @app.route('/')
