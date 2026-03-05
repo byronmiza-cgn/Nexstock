@@ -159,7 +159,9 @@ def calcular_estadisticas(especie):
     ganancia_real = ingreso_ventas - costo_de_vendidos - costo_de_muertos
 
     if total_vendido > 0 and costo_de_vendidos > 0:
-        margen = ((ingreso_ventas - costo_de_vendidos) / costo_de_vendidos) * 100
+        # Margen real: incluye el costo de las muertes para reflejar la rentabilidad total
+        costo_total_real = costo_de_vendidos + costo_de_muertos
+        margen = ((ingreso_ventas - costo_total_real) / costo_de_vendidos) * 100
     elif costo_total > 0 and unidades_vendibles <= 0:
         margen = -100.0
     else:

@@ -132,10 +132,10 @@
                 <div class="p-3 text-center">
                     <div class="fs-5 fw-bold">{{ d.especie.nombre }}</div>
                     <span class="badge badge-cat mb-2">{{ d.especie.categoria }}</span>
-                    <div class="text-nex-success fs-4 fw-bold">{{ d.margen }}%</div>
+                    <div class="{% if d.ganancia_real >= 0 %}text-nex-success{% else %}text-nex-danger{% endif %} fs-4 fw-bold">{{ d.margen }}%</div>
                     <div class="text-muted small">margen</div>
                     <div class="mt-1 small">
-                        Ganancia: <strong class="text-nex-success">{{ formato_moneda(d.ganancia_real) }}</strong>
+                        Ganancia: <strong class="{% if d.ganancia_real >= 0 %}text-nex-success{% else %}text-nex-danger{% endif %}">{{ formato_moneda(d.ganancia_real) }}</strong>
                     </div>
                 </div>
             </div>
