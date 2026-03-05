@@ -6,34 +6,87 @@
     <a href="/especies/nueva" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Nueva Especie</a>
 </div>
 
-{% if especies %}
+{% if datos %}
 <div class="card">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>#</th>
                         <th>Nombre</th>
-                        <th>Categor&iacute;a</th>
-                        <th>Descripci&oacute;n</th>
+                        <th>Categoría</th>
+                        <th class="text-center">Stock</th>
+                        <th class="text-center">Ingresados</th>
+                        <th class="text-center">Vendidos</th>
+                        <th class="text-center">Muertes</th>
+                        <th class="text-end">Costo/U</th>
+                        <th class="text-end">Valor Inventario</th>
                         <th class="text-center">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for e in especies %}
+                    {% for d in datos %}
                     <tr>
-                        <td>{{ e.id }}</td>
-                        <td><strong>{{ e.nombre }}</strong></td>
-                        <td><span class="badge bg-secondary">{{ e.categoria }}</span></td>
-                        <td>{{ e.descripcion or '-' }}</td>
+                        <td><strong>{{ d.especie.nombre }}</strong>
+                            {% if d.especie.descripcion %}
+                            <div class="text-muted small">{{ d.especie.descripcion }}</div>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge bg-secondary">{{ d.especie.categoria }}</span></td>
                         <td class="text-center">
-                            <a href="{{ url_for('editar_especie', id=e.id) }}" class="btn btn-outline-secondary btn-sm" title="Editar"><i class="bi bi-pencil"></i></a>
-                            <button type="button" class="btn btn-outline-danger btn-sm" title="Eliminar" onclick="confirmarEliminar('{{ url_for('eliminar_especie', id=e.id) }}', '{{ e.nombre }}')"><i class="bi bi-trash"></i></button>
+                            {% if d.stock > 0 %}
+                                <span class="badge" style="background:#DCFCE7;color:#15803D;font-size:0.85rem;">{{ d.stock }}</span>
+                            {% elif d.stock == 0 and d.total_ingresado > 0 %}
+                                <span class="badge" style="background:#FEF9C3;color:#92400E;font-size:0.85rem;">0</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center text-muted">{{ d.total_ingresado or '—' }}</td>
+                        <td class="text-center text-muted">{{ d.total_vendido or '—' }}</td>
+                        <td class="text-center">
+                            {% if d.total_muerto > 0 %}
+                                <span class="text-nex-danger fw-bold">{{ d.total_muerto }}</span>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end text-muted small">
+                            {% if d.costo_unitario_ajustado > 0 %}
+                                {{ formato_moneda(d.costo_unitario_ajustado) }}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="text-end fw-bold">
+                            {% if d.valor_inventario > 0 %}
+                                {{ formato_moneda(d.valor_inventario) }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <a href="{{ url_for('editar_especie', id=d.especie.id) }}" class="btn btn-outline-secondary btn-sm" title="Editar"><i class="bi bi-pencil"></i></a>
+                            <button type="button" class="btn btn-outline-danger btn-sm" title="Eliminar" onclick="confirmarEliminar('{{ url_for('eliminar_especie', id=d.especie.id) }}', '{{ d.especie.nombre }}')"><i class="bi bi-trash"></i></button>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
+                <tfoot class="table-light fw-bold">
+                    <tr>
+                        <td colspan="2" class="text-muted small">TOTAL</td>
+                        <td class="text-center">{{ datos | sum(attribute='stock') }}</td>
+                        <td class="text-center text-muted small">{{ datos | sum(attribute='total_ingresado') }}</td>
+                        <td class="text-center text-muted small">{{ datos | sum(attribute='total_vendido') }}</td>
+                        <td class="text-center">
+                            {% set total_muertes = datos | sum(attribute='total_muerto') %}
+                            {% if total_muertes > 0 %}
+                                <span class="text-nex-danger">{{ total_muertes }}</span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td></td>
+                        <td class="text-end">{{ formato_moneda(datos | sum(attribute='valor_inventario')) }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
@@ -41,6 +94,36 @@
 {% else %}
 <div class="alert alert-info">No hay especies registradas. <a href="/especies/nueva">Registra la primera.</a></div>
 {% endif %}
+
+<div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar eliminacion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Estas seguro de eliminar <strong id="deleteItemName"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="deleteForm" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmarEliminar(url, nombre) {
+    document.getElementById('deleteForm').action = url;
+    document.getElementById('deleteItemName').textContent = nombre;
+    new bootstrap.Modal(document.getElementById('modalEliminar')).show();
+}
+</script>
+{% endblock %}
+
 
 <div class="modal fade" id="modalEliminar" tabindex="-1">
     <div class="modal-dialog">

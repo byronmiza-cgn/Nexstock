@@ -486,7 +486,8 @@ def dashboard():
 @login_required
 def lista_especies():
     especies = Especie.query.filter_by(usuario_id=session['usuario_id']).order_by(Especie.nombre).all()
-    return render_template('especies.html', especies=especies)
+    datos = [{'especie': e, **calcular_estadisticas(e)} for e in especies]
+    return render_template('especies.html', datos=datos)
 
 
 @app.route('/especies/nueva', methods=['GET', 'POST'])
