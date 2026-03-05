@@ -1,38 +1,62 @@
 {% extends "base.html" %}
-{% block title %}{% if editando %}Editar Lote{% else %}Nuevo Lote{% endif %}{% endblock %}
+{% block title %}{% if editando %}Editar Lote{% else %}Nuevo Lote{% endblock %}
 {% block content %}
-<h2 class="mb-4"><i class="bi bi-{% if editando %}pencil{% else %}plus-circle{% endif %}"></i> {% if editando %}Editar Lote{% else %}Registrar Lote de Entrada{% endif %}</h2>
-<div class="card">
-    <div class="card-body">
-        {% if frecuentes or resto %}
-        <form method="POST" action="{% if editando %}{{ url_for('editar_lote', id=editando.id) }}{% endif %}">
-            {% if editando %}
-            <div class="mb-3">
-                <label class="form-label">Especie</label>
-                <input type="text" class="form-control" value="{{ editando.especie.nombre }}" disabled>
-                <input type="hidden" name="especie_id" value="{{ editando.especie_id }}">
-            </div>
+
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="bi bi-{% if editando %}pencil{% else %}box-seam{% endif %}"></i>
+        {% if editando %}Editar Lote{% else %}Registrar Lote{% endif %}
+    </h1>
+    <a href="/lotes" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Volver</a>
+</div>
+
+<div class="form-card">
+    <div class="card">
+        <div class="card-body">
+            {% if frecuentes or resto %}
+            <form method="POST" action="{% if editando %}{{ url_for('editar_lote', id=editando.id) }}{% endif %}">
+                {% if editando %}
+                <div class="mb-3">
+                    <label class="form-label">Especie</label>
+                    <input type="text" class="form-control" value="{{ editando.especie.nombre }}" disabled style="background:#FAFAFA;">
+                    <input type="hidden" name="especie_id" value="{{ editando.especie_id }}">
+                </div>
+                {% else %}
+                {% include '_especies_dropdown.html' %}
+                {% endif %}
+
+                <div class="mb-3">
+                    <label for="cantidad" class="form-label">Cantidad ingresada</label>
+                    <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required
+                        value="{{ editando.cantidad if editando else '' }}" placeholder="Ej: 50">
+                </div>
+                <div class="mb-3">
+                    <label for="costo_total" class="form-label">Costo total del lote ({{ currency_symbol }})</label>
+                    <input type="number" class="form-control" id="costo_total" name="costo_total"
+                        step="0.01" min="0" required
+                        value="{{ '%.2f'|format(editando.costo_total) if editando else '' }}"
+                        placeholder="Ej: 250.00">
+                    <div class="form-text">El costo por unidad se calcula automáticamente</div>
+                </div>
+                <div class="mb-3">
+                    <label for="fecha" class="form-label">Fecha de ingreso</label>
+                    <input type="date" class="form-control" id="fecha" name="fecha"
+                        value="{{ editando.fecha.isoformat() if editando else hoy }}" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg"></i> {% if editando %}Guardar Cambios{% else %}Registrar Lote{% endif %}
+                    </button>
+                    <a href="/lotes" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
             {% else %}
-            {% include '_especies_dropdown.html' %}
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Primero debes <a href="/especies/nueva">registrar al menos una especie</a>.
+            </div>
             {% endif %}
-            <div class="mb-3">
-                <label for="cantidad" class="form-label">Cantidad ingresada</label>
-                <input type="number" class="form-control" id="cantidad" name="cantidad" min="1" required value="{{ editando.cantidad if editando else '' }}">
-            </div>
-            <div class="mb-3">
-                <label for="costo_total" class="form-label">Costo total del lote ({{ currency_symbol }})</label>
-                <input type="number" class="form-control" id="costo_total" name="costo_total" step="0.01" min="0" required value="{{ '%.2f'|format(editando.costo_total) if editando else '' }}">
-            </div>
-            <div class="mb-3">
-                <label for="fecha" class="form-label">Fecha de ingreso</label>
-                <input type="date" class="form-control" id="fecha" name="fecha" value="{{ editando.fecha.isoformat() if editando else hoy }}" required>
-            </div>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> {% if editando %}Guardar Cambios{% else %}Registrar Lote{% endif %}</button>
-            <a href="/lotes" class="btn btn-outline-secondary ms-2">Cancelar</a>
-        </form>
-        {% else %}
-        <div class="alert alert-warning">Primero debes <a href="/especies/nueva">registrar al menos una especie</a>.</div>
-        {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

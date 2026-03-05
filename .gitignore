@@ -4,3 +4,8 @@ __pycache__/
 instance/
 .pythonlibs/
 .uv/
+.env
+*.env
+venv/
+.venv/
+cookies.txt
