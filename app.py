@@ -1,9 +1,12 @@
 import os
+import logging
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date, timedelta
+
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SESSION_SECRET', 'dev-secret-key')
@@ -816,3 +819,15 @@ def set_currency():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    app.logger.exception("500 error: %s", error)
+    return render_template('500.html'), 500
+
+@app.errorhandler(Exception)
+def unhandled_exception(e):
+    db.session.rollback()
+    app.logger.exception("Unhandled exception: %s", e)
+    return render_template('500.html'), 500
