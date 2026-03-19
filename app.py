@@ -404,6 +404,8 @@ Si no solicitaste esto, ignora este correo. Tu contraseña no cambiará.
                 # Log the reset link so it's visible in Railway logs (helpful if SMTP isn't configured)
                 app.logger.info('Password reset link for %s: %s', email, reset_url)
                 mail.send(msg)
+                # Log success so we can see in Railway when SMTP accepted the message
+                app.logger.info('Password reset email sent to %s', email)
             except Exception as e:
                 # Log the error and the URL so you can still retrieve the link from logs
                 app.logger.exception("Error enviando email de reset: %s", e)
