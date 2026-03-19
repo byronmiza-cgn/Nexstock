@@ -65,7 +65,7 @@
                         </td>
                         <td class="text-center">
                             <a href="{{ url_for('editar_especie', id=d.especie.id) }}" class="btn btn-outline-secondary btn-sm" title="Editar"><i class="bi bi-pencil"></i></a>
-                            <button type="button" class="btn btn-outline-danger btn-sm" title="Eliminar" onclick="confirmarEliminar('{{ url_for('eliminar_especie', id=d.especie.id) }}', '{{ d.especie.nombre }}')"><i class="bi bi-trash"></i></button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" title="Eliminar" data-delete-url="{{ url_for('eliminar_especie', id=d.especie.id) }}" data-delete-name="{{ d.especie.nombre | e }}"><i class="bi bi-trash"></i></button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -115,11 +115,5 @@
     </div>
 </div>
 
-<script>
-function confirmarEliminar(url, nombre) {
-    document.getElementById('deleteForm').action = url;
-    document.getElementById('deleteItemName').textContent = nombre;
-    new bootstrap.Modal(document.getElementById('modalEliminar')).show();
-}
-</script>
+ 
 {% endblock %}
