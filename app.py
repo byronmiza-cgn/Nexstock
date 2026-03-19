@@ -7,6 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date, timedelta
+from threading import Thread
 
 logging.basicConfig(level=logging.INFO)
 
@@ -403,9 +404,18 @@ Si no solicitaste esto, ignora este correo. Tu contraseña no cambiará.
                 msg.html = html_body
                 # Log the reset link so it's visible in Railway logs (helpful if SMTP isn't configured)
                 app.logger.info('Password reset link for %s: %s', email, reset_url)
-                mail.send(msg)
-                # Log success so we can see in Railway when SMTP accepted the message
-                app.logger.info('Password reset email sent to %s', email)
+
+                # Send email asynchronously so a slow SMTP connection doesn't block the request
+                def _send_async(message):
+                    try:
+                        with app.app_context():
+                            mail.send(message)
+                        app.logger.info('Password reset email sent to %s (background)', email)
+                    except Exception:
+                        app.logger.exception('Error sending password reset email to %s (background)', email)
+
+                Thread(target=_send_async, args=(msg,), daemon=True).start()
+                app.logger.info('Password reset email scheduled for %s', email)
             except Exception as e:
                 # Log the error and the URL so you can still retrieve the link from logs
                 app.logger.exception("Error enviando email de reset: %s", e)
