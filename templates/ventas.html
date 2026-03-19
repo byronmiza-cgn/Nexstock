@@ -33,7 +33,7 @@
                         <td>{{ v.fecha.strftime('%d/%m/%Y') }}</td>
                         <td class="text-center">
                             <a href="{{ url_for('editar_venta', id=v.id) }}" class="btn btn-outline-secondary btn-sm" title="Editar"><i class="bi bi-pencil"></i></a>
-                            <button type="button" class="btn btn-outline-danger btn-sm" title="Eliminar" onclick="confirmarEliminar({{ url_for('eliminar_venta', id=v.id) | tojson }}, {{ ('venta #' ~ v.id ~ ' de ' ~ v.especie.nombre) | tojson }})"><i class="bi bi-trash"></i></button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" title="Eliminar" onclick='confirmarEliminar({{ url_for('eliminar_venta', id=v.id) | tojson }}, {{ ('venta #' ~ v.id ~ ' de ' ~ v.especie.nombre) | tojson }})'><i class="bi bi-trash"></i></button>
                         </td>
                     </tr>
                     {% endfor %}
