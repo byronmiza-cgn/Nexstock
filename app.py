@@ -376,10 +376,8 @@ def forgot_password():
             db.session.commit()
             reset_url = url_for('reset_password', token=token, _external=True)
             try:
-                msg = Message(
-                    subject='Restablecer contraseña - NexStock',
-                    recipients=[email],
-                    body=f'''Hola {usuario.nombre_tienda},
+                # build both plain text and simple HTML body
+                text_body = f"""Hola {usuario.nombre_tienda},
 
 Recibimos una solicitud para restablecer la contraseña de tu cuenta NexStock.
 
@@ -390,11 +388,26 @@ Haz clic en el siguiente enlace para crear una nueva contraseña (válido por 1 
 Si no solicitaste esto, ignora este correo. Tu contraseña no cambiará.
 
 — El equipo de NexStock
-'''
-                )
+"""
+                html_body = f"""
+                <p>Hola <strong>{usuario.nombre_tienda}</strong>,</p>
+                <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta NexStock.</p>
+                <p>Haz clic en el siguiente enlace para crear una nueva contraseña (válido por 1 hora):</p>
+                <p><a href=\"{reset_url}\">Restablecer contraseña</a></p>
+                <p>Si no solicitaste esto, ignora este correo. Tu contraseña no cambiará.</p>
+                <p style=\"color:#6b7280;font-size:0.9rem;\">— El equipo de NexStock</p>
+                """
+
+                msg = Message(subject='Restablecer contraseña - NexStock', recipients=[email])
+                msg.body = text_body
+                msg.html = html_body
+                # Log the reset link so it's visible in Railway logs (helpful if SMTP isn't configured)
+                app.logger.info('Password reset link for %s: %s', email, reset_url)
                 mail.send(msg)
             except Exception as e:
-                app.logger.error("Error enviando email de reset: %s", e)
+                # Log the error and the URL so you can still retrieve the link from logs
+                app.logger.exception("Error enviando email de reset: %s", e)
+                app.logger.info('Password reset link (fallback) for %s: %s', email, reset_url)
         flash('Si ese email está registrado, recibirás un enlace en tu correo.', 'info')
         return redirect(url_for('login'))
     return render_template('forgot_password.html')
